@@ -1,6 +1,8 @@
-input_dir : 'C:\Users\mpon\OneDrive - San Diego Association of Governments\Documents\Work\synPopInput\input'
+input_dir : '.\input'
 scenario_year : 2022
-output_dir : 'C:\Users\mpon\OneDrive - San Diego Association of Governments\Documents\Work\synPopInput\output'
+output_dir : '.\output'
+
+parking_input : '.\parking\input'
 #parking info
 #micro mobility
 #micro transit

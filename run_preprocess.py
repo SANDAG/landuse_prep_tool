@@ -12,11 +12,12 @@ with open('config.yaml') as f:
 input_dir = cfg['input_dir']
 scenario_year = 2022
 write_dir = cfg['output_dir']
+parking_input = cfg['parking_input']
 
 # %%
-households_file = os.path.join(input_dir, f'synthetic_households_{scenario_year}_base.csv')
-persons_file = os.path.join(input_dir, f'synthetic_persons_{scenario_year}_base.csv')
-landuse_file = os.path.join(input_dir, f'mgra15_based_input_{scenario_year}_base.csv')
+households_file = os.path.join(input_dir, f'synthetic_households_{scenario_year}_01.csv')
+persons_file = os.path.join(input_dir, f'synthetic_persons_{scenario_year}_01.csv')
+landuse_file = os.path.join(input_dir, f'mgra15_based_input_{scenario_year}_02.csv')
 #some columns are moved over from 2019 land use file - 
 landuse2019_file = os.path.join(input_dir, 'mgra15_based_input2019.csv')            # Why do we need 2019 file?
 
@@ -258,7 +259,15 @@ def process_landuse()-> pd.DataFrame:
                 'luxuryroom', 'midpriceroom', 'upscaleroom', 'truckregiontype', 'MicroAccessTime', 'remoteAVParking',
                 'refueling_stations', 'totint', 'duden', 'empden', 'popden', 'retempden', 'totintbin', 'empdenbin',
                 'dudenbin', 'PopEmpDenPerMi']
-    # df_mgra[att_2019] = df2019_mgra[att_2019]
+
+    # adultschenrl is not considered
+
+    # Seperating as 3 files
+    aux_cols = ['mgra', 'ech_dist', 'hch_dist']
+    parking_cols = ['mgra', 'hstallsoth', 'hstallssam', 'hparkcost', 'numfreehrs', 'dstallsoth',
+                'dstallssam', 'dparkcost', 'mstallsoth', 'mstallssam', 'mparkcost', 'parkarea']
+    micro_mobi_cols = ['MicroAccessTime']
+
     merged_df = pd.merge(df_mgra, df2019_mgra[att_2019], on='mgra', how='left')
     
     return merged_df
@@ -267,3 +276,4 @@ def process_landuse()-> pd.DataFrame:
 process_household().to_csv(os.path.join(write_dir, 'households.csv'), index=False)
 process_persons().to_csv(os.path.join(write_dir, 'persons.csv'), index=False)
 process_landuse().to_csv(os.path.join(write_dir, f'mgra15_based_input{scenario_year}.csv'), index=False)
+process_landuse().to_csv(os.path.join(parking_input, f'mgra15_based_input{scenario_year}.csv'), index=False)
