@@ -10,16 +10,17 @@ import yaml
 with open('config.yaml') as f:
     cfg = yaml.load(f, Loader=yaml.FullLoader)
 input_dir = cfg['input_dir']
-scenario_year = 2022
+scenario_year = cfg['scenario_year']
 write_dir = cfg['output_dir']
 parking_input = cfg['parking_input']
 
 # %%
-households_file = os.path.join(input_dir, f'synthetic_households_{scenario_year}_01.csv')
-persons_file = os.path.join(input_dir, f'synthetic_persons_{scenario_year}_01.csv')
-landuse_file = os.path.join(input_dir, f'mgra15_based_input_{scenario_year}_02.csv')
+households_file = os.path.join(input_dir,cfg['households_file'].replace('${scenario_year}', str(scenario_year)))
+persons_file = os.path.join(input_dir,cfg['persons_file'].replace('${scenario_year}', str(scenario_year)))
+landuse_file = os.path.join(input_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
 #some columns are moved over from 2019 land use file - 
-landuse2019_file = os.path.join(input_dir, 'mgra15_based_input2019.csv')            # Why do we need 2019 file?
+landuse2019_file = os.path.join(input_dir,cfg['landuse_file_2019'])
+
 
 # %%
 def process_household()-> pd.DataFrame:
@@ -254,19 +255,20 @@ def process_landuse()-> pd.DataFrame:
     df_mgra = df_mgra.rename(columns=landuse_rename_dict)
       
     #attributes copy from 2019 land use file
-    att_2019 = ['mgra','ech_dist', 'hch_dist', 'adultschenrl', 'hstallsoth', 'hstallssam', 'hparkcost', 'numfreehrs', 'dstallsoth',
-                'dstallssam', 'dparkcost', 'mstallsoth', 'mstallssam', 'mparkcost', 'parkarea', 'budgetroom', 'economyroom',
+    att_2019 = ['mgra','ech_dist', 'hch_dist', 'budgetroom', 'economyroom',
                 'luxuryroom', 'midpriceroom', 'upscaleroom', 'truckregiontype', 'MicroAccessTime', 'remoteAVParking',
                 'refueling_stations', 'totint', 'duden', 'empden', 'popden', 'retempden', 'totintbin', 'empdenbin',
                 'dudenbin', 'PopEmpDenPerMi']
 
-    # adultschenrl is not considered
+    # adultschenrl is not considered- 'adultschenrl', 'hstallsoth', 'hstallssam', 'hparkcost', 'numfreehrs', 'dstallsoth',
+                # 'dstallssam', 'dparkcost', 'mstallsoth', 'mstallssam', 'mparkcost', 'parkarea',
 
     # Seperating as 3 files
     aux_cols = ['mgra', 'ech_dist', 'hch_dist']
     parking_cols = ['mgra', 'hstallsoth', 'hstallssam', 'hparkcost', 'numfreehrs', 'dstallsoth',
                 'dstallssam', 'dparkcost', 'mstallsoth', 'mstallssam', 'mparkcost', 'parkarea']
     micro_mobi_cols = ['MicroAccessTime']
+    # Parking will update only the costs - hparkcost, mparkcost, dparkcost and parkarea
 
     merged_df = pd.merge(df_mgra, df2019_mgra[att_2019], on='mgra', how='left')
     

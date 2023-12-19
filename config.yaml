@@ -1,9 +1,9 @@
-input_dir : '.\input'
-scenario_year : 2022
-output_dir : '.\output'
+input_dir: .\input
+output_dir: .\output
+parking_input: .\parking\input
+scenario_year: 2022
 
-parking_input : '.\parking\input'
-#parking info
-#micro mobility
-#micro transit
-#land use aux files
+households_file: synthetic_households_${scenario_year}_01.csv
+persons_file: synthetic_persons_${scenario_year}_01.csv
+landuse_file: mgra15_based_input_${scenario_year}_02.csv
+landuse_file_2019: mgra15_based_input2019.csv
