@@ -7,7 +7,13 @@ import yaml
 
 # %%
 #Reading properties from config file
-with open('config.yaml') as f:
+if len(sys.argv) < 2:
+    print("Config input missing - Usage: python run_preprocess.py arg1")
+    sys.exit(1)
+
+config_file = sys.argv[1]
+
+with open(config_file) as f:
     cfg = yaml.load(f, Loader=yaml.FullLoader)
 input_dir = cfg['input_dir']
 scenario_year = cfg['scenario_year']
@@ -21,8 +27,8 @@ landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}
 parking_file = os.path.join(input_dir,cfg['parking_file'])
 micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
 hub_mgra_map_file = os.path.join(input_dir,cfg['hubs_mapping'])
-
 # school_file = os.path.join(input_dir,cfg['mgra_school_file']) #can be added if not included by E&F team
+
 # %%
 def process_household()-> pd.DataFrame:
     '''
@@ -244,6 +250,7 @@ def process_landuse()-> pd.DataFrame:
     df_parking = pd.read_csv(parking_file)
     mmfile = pd.read_csv(micro_mobility_file)
     hubs_map = pd.read_csv(hub_mgra_map_file)
+    # df_school = pd.read_csv(school_file)
 
     #Mapping mobility hubs to mgra
     mmfile = mmfile[['Mobility Hub','Build - Micromobility Access Time (minutes)']].set_index('Mobility Hub')
@@ -278,9 +285,10 @@ def process_landuse()-> pd.DataFrame:
     #             'remoteAVParking','refueling_stations']
 
     merged_df = pd.merge(df_mgra, df_parking, on='mgra', how='left')
+    # merged_df = pd.merge(merged_df, df_school, on='mgra', how='left') #School df can be added
     merged_df = pd.merge(merged_df,hubs_map[['MGRA','access_time']], left_on='mgra', right_on='MGRA', how='left')
     merged_df = merged_df.drop('MGRA', axis=1)
-    #School df can be added
+    
 
     return merged_df
 
