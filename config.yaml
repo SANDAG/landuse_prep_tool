@@ -1,9 +1,21 @@
 input_dir: .\input
+EF_dir: T:\socioec\Current_Projects\SR15\S0\version7\abm_csv
 output_dir: .\output
 parking_input: .\parking\input
 scenario_year: 2022
 
 households_file: synthetic_households_${scenario_year}_01.csv
 persons_file: synthetic_persons_${scenario_year}_01.csv
-landuse_file: mgra15_based_input_${scenario_year}_02.csv
-landuse_file_2019: mgra15_based_input2019.csv
+landuse_file: mgra15_based_input_${scenario_year}_01.csv
+
+mgra_school_file: mgra_school.csv
+parking_file: final_parking_data.csv
+micro_mob_file: micro_mobility.csv
+hubs_mapping: mobilityHubMGRAs.csv
+#landuse_file_2019: mgra15_based_input2019.csv
+
+#EF_dir
+#supplimentary dir - mgra aux file, correspondence file for mobility hub and mgra
+
+
+

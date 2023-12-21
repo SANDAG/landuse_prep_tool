@@ -12,16 +12,17 @@ with open('config.yaml') as f:
 input_dir = cfg['input_dir']
 scenario_year = cfg['scenario_year']
 write_dir = cfg['output_dir']
-parking_input = cfg['parking_input']
+EF_dir = cfg['EF_dir']
 
 # %%
-households_file = os.path.join(input_dir,cfg['households_file'].replace('${scenario_year}', str(scenario_year)))
-persons_file = os.path.join(input_dir,cfg['persons_file'].replace('${scenario_year}', str(scenario_year)))
-landuse_file = os.path.join(input_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
-#some columns are moved over from 2019 land use file - 
-landuse2019_file = os.path.join(input_dir,cfg['landuse_file_2019'])
+households_file = os.path.join(EF_dir,cfg['households_file'].replace('${scenario_year}', str(scenario_year)))
+persons_file = os.path.join(EF_dir,cfg['persons_file'].replace('${scenario_year}', str(scenario_year)))
+landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
+parking_file = os.path.join(input_dir,cfg['parking_file'])
+micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
+hub_mgra_map_file = os.path.join(input_dir,cfg['hubs_mapping'])
 
-
+# school_file = os.path.join(input_dir,cfg['mgra_school_file']) #can be added if not included by E&F team
 # %%
 def process_household()-> pd.DataFrame:
     '''
@@ -32,19 +33,18 @@ def process_household()-> pd.DataFrame:
     '''
     households = pd.read_csv(households_file)
     xref_taz_mgra = pd.read_csv(landuse_file)[['mgra','taz']]
-    
+    #mgra to home_zone_id
     # series 15 names to previous ABM2+ column names
     households_rename_dict = {
-        'household_id': 'hhid',
-        'HHADJINC': 'hinc',
-        'VEH': 'veh',
-        'NP': 'persons',
-        'HHT': 'hht',
+        'mgra': 'home_zone_id',#
+        'HHADJINC': 'income',
+        'VEH': 'auto_ownership',#
+        'NP': 'hhsize',
         'BLD': 'bldgsz'}
-    households = households.rename(columns=households_rename_dict)
     
     #get taz of household location
     households = households.merge(xref_taz_mgra, on='mgra')
+    households = households.rename(columns=households_rename_dict)
     
     #create household serial number; version
     households['household_serial_no'] = 0
@@ -52,34 +52,34 @@ def process_household()-> pd.DataFrame:
     
     #create poverty (ref: ASPE)
     households['poverty_guideline'] = 12760
-    households.loc[(households['persons'] == 2), 'poverty_guideline'] = 17240
-    households.loc[(households['persons'] == 3), 'poverty_guideline'] = 21720
-    households.loc[(households['persons'] == 4), 'poverty_guideline'] = 26200
-    households.loc[(households['persons'] == 5), 'poverty_guideline'] = 30680
-    households.loc[(households['persons'] == 6), 'poverty_guideline'] = 35160
-    households.loc[(households['persons'] == 7), 'poverty_guideline'] = 39640
-    households.loc[(households['persons'] == 8), 'poverty_guideline'] = 44120
-    households.loc[(households['persons'] >= 9), 'poverty_guideline'] = 44120 + 4480* (households['persons']-8)
+    households.loc[(households['hhsize'] == 2), 'poverty_guideline'] = 17240
+    households.loc[(households['hhsize'] == 3), 'poverty_guideline'] = 21720
+    households.loc[(households['hhsize'] == 4), 'poverty_guideline'] = 26200
+    households.loc[(households['hhsize'] == 5), 'poverty_guideline'] = 30680
+    households.loc[(households['hhsize'] == 6), 'poverty_guideline'] = 35160
+    households.loc[(households['hhsize'] == 7), 'poverty_guideline'] = 39640
+    households.loc[(households['hhsize'] == 8), 'poverty_guideline'] = 44120
+    households.loc[(households['hhsize'] >= 9), 'poverty_guideline'] = 44120 + 4480* (households['hhsize']-8)
     
-    households['poverty'] = households['hinc']/households['poverty_guideline']
+    households['poverty'] = households['income']/households['poverty_guideline']
     
     #create household income category
-    conditions = [(households["hinc"] < 30000),
-                  ((households["hinc"] >= 30000) & (households["hinc"] < 60000)),
-                  ((households["hinc"] >= 60000) & (households["hinc"] < 100000)),
-                  ((households["hinc"] >= 100000) & (households["hinc"] < 150000)),
-                  (households["hinc"] >= 150000)]
+    conditions = [(households["income"] < 30000),
+                  ((households["income"] >= 30000) & (households["income"] < 60000)),
+                  ((households["income"] >= 60000) & (households["income"] < 100000)),
+                  ((households["income"] >= 100000) & (households["income"] < 150000)),
+                  (households["income"] >= 150000)]
     choices = [1,2,3,4,5]
     households["hinccat1"] = pd.Series(np.select(conditions, choices, default=1), dtype="int")
     
     #create number of workers in household
-    households['hworkers'] = households['WIF']
-    households.loc[(households['WIF']==3) & (households['persons']>=3) & (households['HUPAC']>=4), 'hworkers'] = households['persons']
+    households['num_workers'] = households['WIF']
+    households.loc[(households['WIF']==3) & (households['hhsize']>=3) & (households['HUPAC']>=4), 'num_workers'] = households['hhsize']
     #Why do we do this assignment?
 
     #fill NaN with o
-    households['hworkers'].fillna(0, inplace=True)
-    households['veh'].fillna(0, inplace=True)
+    households['num_workers'].fillna(0, inplace=True)
+    households['auto_ownership'].fillna(0, inplace=True)
     
     #create household unit type
     households['unittype'] = households['GQ_type']
@@ -87,26 +87,26 @@ def process_household()-> pd.DataFrame:
     
     #integer type of fields
     households['unittype']= households['unittype'].astype(int)
-    households['hht']= households['hht'].astype(int)
+    households['HHT']= households['HHT'].astype(int)
     households['bldgsz']= households['bldgsz'].astype(int)
-    households['hworkers']= households['hworkers'].astype(int)
-    households['veh']= households['veh'].astype(int)
-    households['hinc']= households['hinc'].astype(int)
+    households['num_workers']= households['num_workers'].astype(int)
+    households['auto_ownership']= households['auto_ownership'].astype(int)
+    households['income']= households['income'].astype(int)
     
-    return households[["hhid",
+    return households[["household_id",
                        "household_serial_no",
                        "taz",
-                       "mgra",
+                       "home_zone_id", #mgra
                        "hinccat1",
-                       "hinc",
-                       "hworkers",
-                       "veh",
-                       "persons",
-                       "hht",
+                       "income",
+                       "num_workers",
+                       "auto_ownership",
+                       "hhsize",
+                       "HHT",
                        "bldgsz",
                        "unittype",
                        "version",
-                       "poverty"]].sort_values(by=['hhid'])
+                       "poverty"]].sort_values(by=['household_id'])
 
 # %%
 def process_persons()-> pd.DataFrame:
@@ -120,8 +120,8 @@ def process_persons()-> pd.DataFrame:
     
     # series 15 names to previous ABM2+ column names
     persons_rename_dict = {
-        'household_id': 'hhid',
-        'SPORDER': 'pnum',
+        # 'household_id': 'hhid',
+        'SPORDER': 'PNUM',
         'AGEP': 'age',
         'SEX': 'sex',
         'RAC1P': 'rac1p',
@@ -130,12 +130,12 @@ def process_persons()-> pd.DataFrame:
         'SOC2': 'soc2'}
     
     persons['naics2_original_code'] = persons['NAICS2']
-    persons = persons.rename(columns=persons_rename_dict).sort_values(by=['hhid','pnum'])
+    persons = persons.rename(columns=persons_rename_dict).sort_values(by=['household_id','PNUM'])
     
     #create household serial number; perid
     persons['household_serial_no'] = 0
     persons['version'] = 0
-    persons['perid'] = range(1, 1+len(persons))
+    persons['person_id'] = range(1, 1+len(persons))
     
     PEMPLOY_FULL, PEMPLOY_PART, PEMPLOY_NOT, PEMPLOY_CHILD = 1, 2, 3, 4
     persons['pemploy'] = np.zeros(len(persons))
@@ -186,7 +186,7 @@ def process_persons()-> pd.DataFrame:
     
     #revise educational attainment: educ
     persons['educ'] = np.where(persons.age >= 18, 9, 0)
-    persons['educ'] = np.where(persons.age >= 22, 13, persons.educ)
+    persons['educ'] = np.where(persons.age >= 22, 13, persons.educ) #age = years of educ?
     
     #employment related fields
     persons['occen5'] = 0
@@ -208,10 +208,10 @@ def process_persons()-> pd.DataFrame:
     persons['weeks']= persons['weeks'].astype(int)
     persons['hours']= persons['hours'].astype(int)
     
-    return persons[["hhid",
-                    "perid",
+    return persons[["household_id", #hhid
+                    "person_id", #perid
                     "household_serial_no",
-                    "pnum",
+                    "PNUM", #pnum
                     "age",
                     "sex",
                     "miltary",
@@ -229,7 +229,7 @@ def process_persons()-> pd.DataFrame:
                     "hisp",
                     "version",
                     'naics2_original_code',
-                    "soc2"]].sort_values(by=['hhid','pnum','perid'])
+                    "soc2"]].sort_values(by=['household_id','PNUM','person_id'])
 
 # %%
 def process_landuse()-> pd.DataFrame:
@@ -239,11 +239,21 @@ def process_landuse()-> pd.DataFrame:
         
         If these column names are changed, then the corresponding names need to be changed in the configs.
     '''
+    print('Working on Landuse file')
     df_mgra = pd.read_csv(landuse_file)
-    df2019_mgra = pd.read_csv(landuse2019_file)
+    df_parking = pd.read_csv(parking_file)
+    mmfile = pd.read_csv(micro_mobility_file)
+    hubs_map = pd.read_csv(hub_mgra_map_file)
+
+    #Mapping mobility hubs to mgra
+    mmfile = mmfile[['Mobility Hub','Build - Micromobility Access Time (minutes)']].set_index('Mobility Hub')
+    mmfile.fillna(0,inplace=True)
+    hubs_map['access_time'] = hubs_map['MoHubName'].map(mmfile['Build - Micromobility Access Time (minutes)'])
+    hubs_map['access_time']= hubs_map['access_time'].astype(int)
     
     # series 15 names to previous ABM2+ column names
     landuse_rename_dict = {
+        # 'MAZ': 'zone_id,'
         'zip': 'zip09',
         #'emp_tot':'emp_total',
         'majorcollegeenroll_total': 'collegeenroll',
@@ -253,29 +263,28 @@ def process_landuse()-> pd.DataFrame:
         'LUZ':'luz_id',
         'emp_tot': 'emp_total'}
     df_mgra = df_mgra.rename(columns=landuse_rename_dict)
-      
-    #attributes copy from 2019 land use file
-    att_2019 = ['mgra','ech_dist', 'hch_dist', 'budgetroom', 'economyroom',
-                'luxuryroom', 'midpriceroom', 'upscaleroom', 'truckregiontype', 'MicroAccessTime', 'remoteAVParking',
-                'refueling_stations', 'totint', 'duden', 'empden', 'popden', 'retempden', 'totintbin', 'empdenbin',
-                'dudenbin', 'PopEmpDenPerMi']
 
-    # adultschenrl is not considered- 'adultschenrl', 'hstallsoth', 'hstallssam', 'hparkcost', 'numfreehrs', 'dstallsoth',
-                # 'dstallssam', 'dparkcost', 'mstallsoth', 'mstallssam', 'mparkcost', 'parkarea',
+    # # Seperating as 3 files
+    # aux_cols = ['ech_dist', 'hch_dist']
+    # micro_mobi_cols = ['MicroAccessTime']
 
-    # Seperating as 3 files
-    aux_cols = ['mgra', 'ech_dist', 'hch_dist']
-    parking_cols = ['mgra', 'hstallsoth', 'hstallssam', 'hparkcost', 'numfreehrs', 'dstallsoth',
-                'dstallssam', 'dparkcost', 'mstallsoth', 'mstallssam', 'mparkcost', 'parkarea']
-    micro_mobi_cols = ['MicroAccessTime']
-    # Parking will update only the costs - hparkcost, mparkcost, dparkcost and parkarea
+    # parking_cols = ['mgra', 'hstallsoth', 'hstallssam', 'hparkcost', 'numfreehrs', 'dstallsoth',
+    #             'dstallssam', 'dparkcost', 'mstallsoth', 'mstallssam', 'mparkcost', 'parkarea']
+    # # Parking will update only the costs - hparkcost, mparkcost, dparkcost and parkarea
 
-    merged_df = pd.merge(df_mgra, df2019_mgra[att_2019], on='mgra', how='left')
-    
+    # script_4d = ['totint','duden','empden','popden','retempden','totintbin','empdenbin','dudenbin','PopEmpDenPerMi']
+
+    # pending_cols = ['budgetroom', 'economyroom','luxuryroom', 'midpriceroom', 'upscaleroom', 'truckregiontype',
+    #             'remoteAVParking','refueling_stations']
+
+    merged_df = pd.merge(df_mgra, df_parking, on='mgra', how='left')
+    merged_df = pd.merge(merged_df,hubs_map[['MGRA','access_time']], left_on='mgra', right_on='MGRA', how='left')
+    merged_df = merged_df.drop('MGRA', axis=1)
+    #School df can be added
+
     return merged_df
 
 # %%
 process_household().to_csv(os.path.join(write_dir, 'households.csv'), index=False)
 process_persons().to_csv(os.path.join(write_dir, 'persons.csv'), index=False)
 process_landuse().to_csv(os.path.join(write_dir, f'mgra15_based_input{scenario_year}.csv'), index=False)
-process_landuse().to_csv(os.path.join(parking_input, f'mgra15_based_input{scenario_year}.csv'), index=False)

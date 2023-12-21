@@ -1,1 +1,0 @@
-we need to have mgra15_based_input2022.csv, mgra_parking_inventory.csv, mgra shp,shx etc files
