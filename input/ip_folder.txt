@@ -1,0 +1,1 @@
+Needs to contain final_parking_data.csv, micro_mobility.csv, mobilityHubMGRAs.csv (hubs to mgra mapping)
