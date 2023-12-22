@@ -27,7 +27,7 @@ landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}
 parking_file = os.path.join(input_dir,cfg['parking_file'])
 micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
 hub_mgra_map_file = os.path.join(input_dir,cfg['hubs_mapping'])
-# school_file = os.path.join(input_dir,cfg['mgra_school_file']) #can be added if not included by E&F team
+school_dist_file = os.path.join(input_dir,cfg['school_dist_file']) #can be added if not included by E&F team
 
 # %%
 def process_household()-> pd.DataFrame:
@@ -250,25 +250,21 @@ def process_landuse()-> pd.DataFrame:
     df_parking = pd.read_csv(parking_file)
     mmfile = pd.read_csv(micro_mobility_file)
     hubs_map = pd.read_csv(hub_mgra_map_file)
-    # df_school = pd.read_csv(school_file)
+    df_school = pd.read_csv(school_dist_file)
+
 
     #Mapping mobility hubs to mgra
-    mmfile = mmfile[['Mobility Hub','Build - Micromobility Access Time (minutes)']].set_index('Mobility Hub')
-    mmfile.fillna(0,inplace=True)
-    hubs_map['access_time'] = hubs_map['MoHubName'].map(mmfile['Build - Micromobility Access Time (minutes)'])
-    hubs_map['access_time']= hubs_map['access_time'].astype(int)
+    mmfile = mmfile[['Mobility Hub','Access Time']].set_index('Mobility Hub')
+    # mmfile.fillna(0,inplace=True)
+    hubs_map['access_time'] = hubs_map['MoHubName'].map(mmfile['Access Time'])
     
     # series 15 names to previous ABM2+ column names
     landuse_rename_dict = {
-        # 'MAZ': 'zone_id,'
-        'zip': 'zip09',
-        #'emp_tot':'emp_total',
         'majorcollegeenroll_total': 'collegeenroll',
         'othercollegeenroll_total': 'othercollegeenroll',
         'acre': 'acres',
         'landacre':'land_acres',
-        'LUZ':'luz_id',
-        'emp_tot': 'emp_total'}
+        'LUZ':'luz_id'}
     df_mgra = df_mgra.rename(columns=landuse_rename_dict)
 
     # # Seperating as 3 files
@@ -282,13 +278,16 @@ def process_landuse()-> pd.DataFrame:
     # script_4d = ['totint','duden','empden','popden','retempden','totintbin','empdenbin','dudenbin','PopEmpDenPerMi']
 
     # pending_cols = ['budgetroom', 'economyroom','luxuryroom', 'midpriceroom', 'upscaleroom', 'truckregiontype',
-    #             'remoteAVParking','refueling_stations']
+    #             
+    
+    #Only these 2 s'remoteAVParking','refueling_stations']
 
     merged_df = pd.merge(df_mgra, df_parking, on='mgra', how='left')
-    # merged_df = pd.merge(merged_df, df_school, on='mgra', how='left') #School df can be added
+    merged_df = pd.merge(merged_df, df_school, on='mgra', how='left') #School df can be added
     merged_df = pd.merge(merged_df,hubs_map[['MGRA','access_time']], left_on='mgra', right_on='MGRA', how='left')
     merged_df = merged_df.drop('MGRA', axis=1)
-    
+    merged_df['access_time'].fillna(0,inplace=True)
+    merged_df['access_time']= merged_df['access_time'].astype(int)
 
     return merged_df
 
