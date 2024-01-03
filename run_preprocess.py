@@ -272,7 +272,7 @@ def process_landuse()-> pd.DataFrame:
     #Mapping mobility hubs to mgra
     mmfile = mmfile[['Mobility Hub','Access Time']].set_index('Mobility Hub')
     # mmfile.fillna(0,inplace=True)
-    hubs_map['access_time'] = hubs_map['MoHubName'].map(mmfile['Access Time'])
+    hubs_map['MicroAccessTime'] = hubs_map['MoHubName'].map(mmfile['Access Time'])
     
     # series 15 names to previous ABM2+ column names
     # landuse_rename_dict = {
@@ -309,10 +309,10 @@ def process_landuse()-> pd.DataFrame:
 
     merged_df = pd.merge(df_mgra, df_parking, on='mgra', how='left')
     merged_df = pd.merge(merged_df, df_school, on='mgra', how='left') #School df can be added
-    merged_df = pd.merge(merged_df,hubs_map[['MGRA','access_time']], left_on='mgra', right_on='MGRA', how='left')
+    merged_df = pd.merge(merged_df,hubs_map[['MGRA','MicroAccessTime']], left_on='mgra', right_on='MGRA', how='left')
     merged_df = merged_df.drop('MGRA', axis=1)
-    merged_df['access_time'].fillna(0,inplace=True)
-    merged_df['access_time']= merged_df['access_time'].astype(int)
+    merged_df['MicroAccessTime'].fillna(0,inplace=True)
+    merged_df['MicroAccessTime']= merged_df['MicroAccessTime'].astype(int)
 
     return merged_df
 
