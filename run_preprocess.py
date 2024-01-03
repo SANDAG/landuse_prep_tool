@@ -41,11 +41,18 @@ def process_household()-> pd.DataFrame:
     xref_taz_mgra = pd.read_csv(landuse_file)[['mgra','taz']]
     #mgra to home_zone_id
     # series 15 names to previous ABM2+ column names
+    # households_rename_dict = {
+    #     'mgra': 'home_zone_id',#
+    #     'HHADJINC': 'income',
+    #     'VEH': 'auto_ownership',#
+    #     'NP': 'persons',
+    #     'BLD': 'bldgsz'}
     households_rename_dict = {
-        'mgra': 'home_zone_id',#
-        'HHADJINC': 'income',
-        'VEH': 'auto_ownership',#
-        'NP': 'hhsize',
+        'household_id': 'hhid',
+        'HHADJINC': 'hinc',
+        'VEH': 'veh',
+        'NP': 'persons',
+        'HHT': 'hht',
         'BLD': 'bldgsz'}
     
     #get taz of household location
@@ -58,34 +65,34 @@ def process_household()-> pd.DataFrame:
     
     #create poverty (ref: ASPE)
     households['poverty_guideline'] = 12760
-    households.loc[(households['hhsize'] == 2), 'poverty_guideline'] = 17240
-    households.loc[(households['hhsize'] == 3), 'poverty_guideline'] = 21720
-    households.loc[(households['hhsize'] == 4), 'poverty_guideline'] = 26200
-    households.loc[(households['hhsize'] == 5), 'poverty_guideline'] = 30680
-    households.loc[(households['hhsize'] == 6), 'poverty_guideline'] = 35160
-    households.loc[(households['hhsize'] == 7), 'poverty_guideline'] = 39640
-    households.loc[(households['hhsize'] == 8), 'poverty_guideline'] = 44120
-    households.loc[(households['hhsize'] >= 9), 'poverty_guideline'] = 44120 + 4480* (households['hhsize']-8)
+    households.loc[(households['persons'] == 2), 'poverty_guideline'] = 17240
+    households.loc[(households['persons'] == 3), 'poverty_guideline'] = 21720
+    households.loc[(households['persons'] == 4), 'poverty_guideline'] = 26200
+    households.loc[(households['persons'] == 5), 'poverty_guideline'] = 30680
+    households.loc[(households['persons'] == 6), 'poverty_guideline'] = 35160
+    households.loc[(households['persons'] == 7), 'poverty_guideline'] = 39640
+    households.loc[(households['persons'] == 8), 'poverty_guideline'] = 44120
+    households.loc[(households['persons'] >= 9), 'poverty_guideline'] = 44120 + 4480* (households['persons']-8)
     
-    households['poverty'] = households['income']/households['poverty_guideline']
+    households['poverty'] = households['hinc']/households['poverty_guideline']
     
     #create household income category
-    conditions = [(households["income"] < 30000),
-                  ((households["income"] >= 30000) & (households["income"] < 60000)),
-                  ((households["income"] >= 60000) & (households["income"] < 100000)),
-                  ((households["income"] >= 100000) & (households["income"] < 150000)),
-                  (households["income"] >= 150000)]
+    conditions = [(households["hinc"] < 30000),
+                  ((households["hinc"] >= 30000) & (households["hinc"] < 60000)),
+                  ((households["hinc"] >= 60000) & (households["hinc"] < 100000)),
+                  ((households["hinc"] >= 100000) & (households["hinc"] < 150000)),
+                  (households["hinc"] >= 150000)]
     choices = [1,2,3,4,5]
     households["hinccat1"] = pd.Series(np.select(conditions, choices, default=1), dtype="int")
     
     #create number of workers in household
     households['num_workers'] = households['WIF']
-    households.loc[(households['WIF']==3) & (households['hhsize']>=3) & (households['HUPAC']>=4), 'num_workers'] = households['hhsize']
+    households.loc[(households['WIF']==3) & (households['persons']>=3) & (households['HUPAC']>=4), 'num_workers'] = households['persons']
     #Why do we do this assignment?
 
     #fill NaN with o
     households['num_workers'].fillna(0, inplace=True)
-    households['auto_ownership'].fillna(0, inplace=True)
+    households['veh'].fillna(0, inplace=True)
     
     #create household unit type
     households['unittype'] = households['GQ_type']
@@ -93,26 +100,26 @@ def process_household()-> pd.DataFrame:
     
     #integer type of fields
     households['unittype']= households['unittype'].astype(int)
-    households['HHT']= households['HHT'].astype(int)
+    households['hht']= households['hht'].astype(int)
     households['bldgsz']= households['bldgsz'].astype(int)
     households['num_workers']= households['num_workers'].astype(int)
-    households['auto_ownership']= households['auto_ownership'].astype(int)
-    households['income']= households['income'].astype(int)
+    households['veh']= households['veh'].astype(int)
+    households['hinc']= households['hinc'].astype(int)
     
-    return households[["household_id",
+    return households[["hhid",
                        "household_serial_no",
                        "taz",
-                       "home_zone_id", #mgra
+                       "mgra", #mgra
                        "hinccat1",
-                       "income",
+                       "hinc",
                        "num_workers",
-                       "auto_ownership",
-                       "hhsize",
-                       "HHT",
+                       "veh",
+                       "persons",
+                       "hht",
                        "bldgsz",
                        "unittype",
                        "version",
-                       "poverty"]].sort_values(by=['household_id'])
+                       "poverty"]].sort_values(by=['hhid'])
 
 # %%
 def process_persons()-> pd.DataFrame:
@@ -125,9 +132,18 @@ def process_persons()-> pd.DataFrame:
     persons = pd.read_csv(persons_file, engine='pyarrow')
     
     # series 15 names to previous ABM2+ column names
+    # persons_rename_dict = {
+    #     # 'household_id': 'hhid',
+    #     'SPORDER': 'PNUM',
+    #     'AGEP': 'age',
+    #     'SEX': 'sex',
+    #     'RAC1P': 'rac1p',
+    #     'WKW': 'weeks',
+    #     'WKHP': 'hours',
+    #     'SOC2': 'soc2'}
     persons_rename_dict = {
-        # 'household_id': 'hhid',
-        'SPORDER': 'PNUM',
+        'household_id': 'hhid',
+        'SPORDER': 'pnum',
         'AGEP': 'age',
         'SEX': 'sex',
         'RAC1P': 'rac1p',
@@ -136,12 +152,12 @@ def process_persons()-> pd.DataFrame:
         'SOC2': 'soc2'}
     
     persons['naics2_original_code'] = persons['NAICS2']
-    persons = persons.rename(columns=persons_rename_dict).sort_values(by=['household_id','PNUM'])
+    persons = persons.rename(columns=persons_rename_dict).sort_values(by=['hhid','pnum'])
     
     #create household serial number; perid
     persons['household_serial_no'] = 0
     persons['version'] = 0
-    persons['person_id'] = range(1, 1+len(persons))
+    persons['perid'] = range(1, 1+len(persons))
     
     PEMPLOY_FULL, PEMPLOY_PART, PEMPLOY_NOT, PEMPLOY_CHILD = 1, 2, 3, 4
     persons['pemploy'] = np.zeros(len(persons))
@@ -214,10 +230,10 @@ def process_persons()-> pd.DataFrame:
     persons['weeks']= persons['weeks'].astype(int)
     persons['hours']= persons['hours'].astype(int)
     
-    return persons[["household_id", #hhid
-                    "person_id", #perid
+    return persons[["hhid", #hhid
+                    "perid", #person_id
                     "household_serial_no",
-                    "PNUM", #pnum
+                    "pnum", #pnum
                     "age",
                     "sex",
                     "miltary",
@@ -235,7 +251,7 @@ def process_persons()-> pd.DataFrame:
                     "hisp",
                     "version",
                     'naics2_original_code',
-                    "soc2"]].sort_values(by=['household_id','PNUM','person_id'])
+                    "soc2"]].sort_values(by=['hhid','pnum','perid'])
 
 # %%
 def process_landuse()-> pd.DataFrame:
@@ -259,12 +275,21 @@ def process_landuse()-> pd.DataFrame:
     hubs_map['access_time'] = hubs_map['MoHubName'].map(mmfile['Access Time'])
     
     # series 15 names to previous ABM2+ column names
+    # landuse_rename_dict = {
+    #     'majorcollegeenroll_total': 'collegeenroll',
+    #     'othercollegeenroll_total': 'othercollegeenroll',
+    #     'acre': 'acres',
+    #     'landacre':'land_acres',
+    #     'LUZ':'luz_id'}
     landuse_rename_dict = {
+        'zip': 'zip09',
+        #'emp_tot':'emp_total',
         'majorcollegeenroll_total': 'collegeenroll',
         'othercollegeenroll_total': 'othercollegeenroll',
         'acre': 'acres',
         'landacre':'land_acres',
-        'LUZ':'luz_id'}
+        'LUZ':'luz_id',
+        'emp_tot': 'emp_total'}
     df_mgra = df_mgra.rename(columns=landuse_rename_dict)
 
     # # Seperating as 3 files
