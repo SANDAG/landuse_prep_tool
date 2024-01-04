@@ -9,7 +9,7 @@ landuse_file: mgra15_based_input_${scenario_year}_01.csv
 
 mgra_school_file: mgra_school.csv
 school_dist_file: aux_2019.csv
-parking_file: final_parking_data.csv
+parking_file: final_parking_data_2022.csv
 micro_mob_file: micro_mobility.csv
 hubs_mapping: mobilityHubMGRAs.csv
 

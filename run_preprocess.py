@@ -270,17 +270,9 @@ def process_landuse()-> pd.DataFrame:
 
 
     #Mapping mobility hubs to mgra
-    mmfile = mmfile[['Mobility Hub','Access Time']].set_index('Mobility Hub')
+    mmfile = mmfile[['Mobility_Hub','Access_Time']].set_index('Mobility_Hub')
     # mmfile.fillna(0,inplace=True)
-    hubs_map['MicroAccessTime'] = hubs_map['MoHubName'].map(mmfile['Access Time'])
-    
-    # series 15 names to previous ABM2+ column names
-    # landuse_rename_dict = {
-    #     'majorcollegeenroll_total': 'collegeenroll',
-    #     'othercollegeenroll_total': 'othercollegeenroll',
-    #     'acre': 'acres',
-    #     'landacre':'land_acres',
-    #     'LUZ':'luz_id'}
+    hubs_map['MicroAccessTime'] = hubs_map['MoHubName'].map(mmfile['Access_Time'])
     landuse_rename_dict = {
         'zip': 'zip09',
         #'emp_tot':'emp_total',
