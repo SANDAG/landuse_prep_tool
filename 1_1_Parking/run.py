@@ -10,8 +10,8 @@ if __name__ == "__main__":
         f.close()
 
     data = data.replace(
-        "mgra15_based_input2022.csv",
-        "mgra15_based_input{}.csv".format(year)
+        "_2022.csv",
+        "_{}.csv".format(year)
         )
 
     with open("settings.yaml", "w") as f:

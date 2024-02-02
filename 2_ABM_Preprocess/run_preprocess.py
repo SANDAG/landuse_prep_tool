@@ -86,8 +86,8 @@ def process_household()-> pd.DataFrame:
     households["hinccat1"] = pd.Series(np.select(conditions, choices, default=1), dtype="int")
     
     #create number of workers in household
-    households['num_workers'] = households['WIF']
-    households.loc[(households['WIF']==3) & (households['persons']>=3) & (households['HUPAC']>=4), 'num_workers'] = households['persons']
+    households['num_workers'] = households['workers']
+    households.loc[(households['workers']==3) & (households['persons']>=3) & (households['HUPAC']>=4), 'num_workers'] = households['persons']
     #Why do we do this assignment?
 
     #fill NaN with o
@@ -95,8 +95,8 @@ def process_household()-> pd.DataFrame:
     households['veh'].fillna(0, inplace=True)
     
     #create household unit type
-    households['unittype'] = households['GQ_type']
-    households.loc[(households['GQ_type'].isin([1,2,3])), 'unittype'] = 1
+    households['unittype'] = households['gq_type']
+    households.loc[(households['gq_type'].isin([1,2,3])), 'unittype'] = 1
     
     #integer type of fields
     households['unittype']= households['unittype'].astype(int)
@@ -104,7 +104,7 @@ def process_household()-> pd.DataFrame:
     households['bldgsz']= households['bldgsz'].astype(int)
     households['num_workers']= households['num_workers'].astype(int)
     households['veh']= households['veh'].astype(int)
-    households['hinc']= households['hinc'].astype(int)
+    # households['hinc']= households['hinc'].astype(int)
     
     return households[["hhid",
                        "household_serial_no",
@@ -306,7 +306,7 @@ def process_landuse()-> pd.DataFrame:
     merged_df['MicroAccessTime'].fillna(0,inplace=True)
     merged_df['MicroAccessTime']= merged_df['MicroAccessTime'].astype(int)
 
-    return merged_df
+    return merged_df.sort_values(by='mgra')
 
 # %%
 process_household().to_csv(os.path.join(write_dir, 'households.csv'), index=False)

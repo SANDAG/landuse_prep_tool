@@ -5,7 +5,7 @@ plots_dir: "./output/plots"
 
 # Inputs
 inputs:
-  land_use: "T:/socioec/Current_Projects/SR15/S0/version7/abm_csv/mgra15_based_input_2035_01.csv"       #To be changed for different years
+  land_use: "T:/socioec/Current_Projects/SR15/S0/version9/abm_csv/mgra15_based_input_2035.csv"       #To be changed for different years
   geometry: "T:/ABM/data/sr15_inputs/landuse_prep/parking_inputs/mgra15.shp"
   raw_parking_inventory: "T:/ABM/data/sr15_inputs/landuse_prep/parking_inputs/mgra_parking_inventory.csv"
 
