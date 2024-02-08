@@ -284,26 +284,11 @@ def process_landuse()-> pd.DataFrame:
         'emp_tot': 'emp_total'}
     df_mgra = df_mgra.rename(columns=landuse_rename_dict)
 
-    # # Seperating as 3 files
-    # aux_cols = ['ech_dist', 'hch_dist']
-    # micro_mobi_cols = ['MicroAccessTime']
-
-    # parking_cols = ['mgra', 'hstallsoth', 'hstallssam', 'hparkcost', 'numfreehrs', 'dstallsoth',
-    #             'dstallssam', 'dparkcost', 'mstallsoth', 'mstallssam', 'mparkcost', 'parkarea']
-    # # Parking will update only the costs - hparkcost, mparkcost, dparkcost and parkarea
-
-    # script_4d = ['totint','duden','empden','popden','retempden','totintbin','empdenbin','dudenbin','PopEmpDenPerMi']
-
-    # pending_cols = ['budgetroom', 'economyroom','luxuryroom', 'midpriceroom', 'upscaleroom', 'truckregiontype',
-    #             
-    
-    #Only these 2 s'remoteAVParking','refueling_stations']
-
     merged_df = pd.merge(df_mgra, df_parking, on='mgra', how='left')
     merged_df = pd.merge(merged_df, df_school, on='mgra', how='left') #School df can be added
     merged_df = pd.merge(merged_df,hubs_map[['MGRA','MicroAccessTime']], left_on='mgra', right_on='MGRA', how='left')
     merged_df = merged_df.drop('MGRA', axis=1)
-    merged_df['MicroAccessTime'].fillna(0,inplace=True)
+    merged_df['MicroAccessTime'].fillna(999,inplace=True)
     merged_df['MicroAccessTime']= merged_df['MicroAccessTime'].astype(int)
 
     return merged_df.sort_values(by='mgra')
