@@ -28,6 +28,10 @@ parking_file = os.path.join(input_dir,cfg['parking_file'])
 micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
 hub_mgra_map_file = os.path.join(input_dir,cfg['hubs_mapping'])
 school_dist_file = os.path.join(input_dir,cfg['school_dist_file']) #can be added if not included by E&F team
+microtransit_file = os.path.join(input_dir,cfg['microtransit_file'])
+with open(microtransit_file, "r") as f:
+    microtransit = yaml.safe_load(f)
+    f.close()  #MicroTransit changes pending
 
 # %%
 def process_household()-> pd.DataFrame:
@@ -76,6 +80,8 @@ def process_household()-> pd.DataFrame:
     
     households['poverty'] = households['hinc']/households['poverty_guideline']
     
+    households['hinc'].fillna(0,inplace=True) #newly added
+
     #create household income category
     conditions = [(households["hinc"] < 30000),
                   ((households["hinc"] >= 30000) & (households["hinc"] < 60000)),
@@ -86,15 +92,18 @@ def process_household()-> pd.DataFrame:
     households["hinccat1"] = pd.Series(np.select(conditions, choices, default=1), dtype="int")
     
     #create number of workers in household
+    # households['num_workers'] = households['WIF']
+    # households.loc[(households['WIF']==3) & (households['persons']>=3) & (households['HUPAC']>=4), 'num_workers'] = households['persons']
     households['num_workers'] = households['workers']
     households.loc[(households['workers']==3) & (households['persons']>=3) & (households['HUPAC']>=4), 'num_workers'] = households['persons']
-    #Why do we do this assignment?
 
     #fill NaN with o
     households['num_workers'].fillna(0, inplace=True)
     households['veh'].fillna(0, inplace=True)
     
     #create household unit type
+    # households['unittype'] = households['GQ_type']
+    # households.loc[(households['GQ_type'].isin([1,2,3])), 'unittype'] = 1
     households['unittype'] = households['gq_type']
     households.loc[(households['gq_type'].isin([1,2,3])), 'unittype'] = 1
     
@@ -290,6 +299,16 @@ def process_landuse()-> pd.DataFrame:
     merged_df = merged_df.drop('MGRA', axis=1)
     merged_df['MicroAccessTime'].fillna(999,inplace=True)
     merged_df['MicroAccessTime']= merged_df['MicroAccessTime'].astype(int)
+
+    merged_df["microtransit"] = np.zeros(len(merged_df), int)
+    merged_df["nev"] = np.zeros(len(merged_df), int)
+
+    for service, info in microtransit['services'].items():
+        for mgra_serviced in info['mgras_serviced']:
+            # Find the row in the DataFrame where mgra matches
+            match_row = merged_df[merged_df['mgra'] == mgra_serviced]
+            if not match_row.empty:
+                merged_df.loc[match_row.index, info['type']] = info['id']
 
     return merged_df.sort_values(by='mgra')
 

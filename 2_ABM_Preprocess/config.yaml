@@ -1,4 +1,4 @@
-input_dir: .\input
+input_dir: T:\ABM\data\sr15_inputs\landuse_prep
 EF_dir: T:\socioec\Current_Projects\SR15\S0\version10\abm_csv
 output_dir: .\output
 scenario_year: 2022
@@ -7,11 +7,11 @@ households_file: synthetic_households_${scenario_year}.csv
 persons_file: synthetic_persons_${scenario_year}.csv
 landuse_file: mgra15_based_input_${scenario_year}.csv
 
-mgra_school_file: mgra_school.csv
+# mgra_school_file: mgra_school.csv
 school_dist_file: aux_2019.csv
 parking_file: final_parking_data_2022.csv
 micro_mob_file: micro_mobility.csv
 hubs_mapping: mobilityHubMGRAs.csv
-
+microtransit_file: microtransit.yaml
 
 
