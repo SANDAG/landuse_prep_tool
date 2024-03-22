@@ -24,14 +24,15 @@ EF_dir = cfg['EF_dir']
 households_file = os.path.join(EF_dir,cfg['households_file'].replace('${scenario_year}', str(scenario_year)))
 persons_file = os.path.join(EF_dir,cfg['persons_file'].replace('${scenario_year}', str(scenario_year)))
 landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
-parking_file = os.path.join(input_dir,cfg['parking_file'])
+parking_file = os.path.join(input_dir,cfg['parking_file'].replace('${scenario_year}', str(scenario_year)))
+# parking_file = os.path.join(input_dir,cfg['parking_file'])
 micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
 hub_mgra_map_file = os.path.join(input_dir,cfg['hubs_mapping'])
 school_dist_file = os.path.join(input_dir,cfg['school_dist_file']) #can be added if not included by E&F team
-microtransit_file = os.path.join(input_dir,cfg['microtransit_file'])
-with open(microtransit_file, "r") as f:
-    microtransit = yaml.safe_load(f)
-    f.close()  #MicroTransit changes pending
+# microtransit_file = os.path.join(input_dir,cfg['microtransit_file'])
+# with open(microtransit_file, "r") as f:
+#     microtransit = yaml.safe_load(f)
+#     f.close()  #MicroTransit changes pending
 
 # %%
 def process_household()-> pd.DataFrame:
@@ -138,7 +139,7 @@ def process_persons()-> pd.DataFrame:
         
         If these column names are changed, then the corresponding names need to be changed in the configs.
     '''
-    persons = pd.read_csv(persons_file, engine='pyarrow')
+    persons = pd.read_csv(persons_file)
     
     # series 15 names to previous ABM2+ column names
     # persons_rename_dict = {
@@ -161,6 +162,7 @@ def process_persons()-> pd.DataFrame:
         'SOC2': 'soc2'}
     
     persons['naics2_original_code'] = persons['NAICS2']
+    persons['naics2_original_code']=persons['naics2_original_code'].fillna(0)
     persons = persons.rename(columns=persons_rename_dict).sort_values(by=['hhid','pnum'])
     
     #create household serial number; perid
@@ -238,6 +240,7 @@ def process_persons()-> pd.DataFrame:
     #integer type of fields
     persons['weeks']= persons['weeks'].astype(int)
     persons['hours']= persons['hours'].astype(int)
+    persons.fillna(0, inplace=True)
     
     return persons[["hhid", #hhid
                     "perid", #person_id
@@ -280,7 +283,7 @@ def process_landuse()-> pd.DataFrame:
 
     #Mapping mobility hubs to mgra
     mmfile = mmfile[['Mobility_Hub','Access_Time']].set_index('Mobility_Hub')
-    # mmfile.fillna(0,inplace=True)
+    # mmfile['Access_Time'].fillna(0,inplace=True)  #Comment this out for removing 0 from micro access time
     hubs_map['MicroAccessTime'] = hubs_map['MoHubName'].map(mmfile['Access_Time'])
     landuse_rename_dict = {
         'zip': 'zip09',
@@ -300,15 +303,15 @@ def process_landuse()-> pd.DataFrame:
     merged_df['MicroAccessTime'].fillna(999,inplace=True)
     merged_df['MicroAccessTime']= merged_df['MicroAccessTime'].astype(int)
 
-    merged_df["microtransit"] = np.zeros(len(merged_df), int)
-    merged_df["nev"] = np.zeros(len(merged_df), int)
+    # merged_df["microtransit"] = np.zeros(len(merged_df), int)
+    # merged_df["nev"] = np.zeros(len(merged_df), int)
 
-    for service, info in microtransit['services'].items():
-        for mgra_serviced in info['mgras_serviced']:
-            # Find the row in the DataFrame where mgra matches
-            match_row = merged_df[merged_df['mgra'] == mgra_serviced]
-            if not match_row.empty:
-                merged_df.loc[match_row.index, info['type']] = info['id']
+    # for service, info in microtransit['services'].items():
+    #     for mgra_serviced in info['mgras_serviced']:
+    #         # Find the row in the DataFrame where mgra matches
+    #         match_row = merged_df[merged_df['mgra'] == mgra_serviced]
+    #         if not match_row.empty:
+    #             merged_df.loc[match_row.index, info['type']] = info['id']
 
     return merged_df.sort_values(by='mgra')
 
