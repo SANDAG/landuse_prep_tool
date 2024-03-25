@@ -165,7 +165,7 @@ def write_output(combined_df):
 
 if __name__ == "__main__":
     
-    config = './setting_preprocess.yaml'
+    config = './1_setting_preprocess.yaml'
     # config = './settings_inventory.yaml'
     with open(config, "r") as stream:
         try:
