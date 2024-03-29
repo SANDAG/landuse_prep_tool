@@ -7,102 +7,102 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 
 def parking_reduction(raw_parking_df):
-        # Free parking spaces
-        df = (
+    # Free parking spaces
+    df = (
+        raw_parking_df[
+            [
+                "on_street_free_spaces",
+                "off_street_free_spaces",
+                "off_street_residential_spaces",
+            ]
+        ]
+        .sum(axis=1)
+        .to_frame("free_spaces")
+    )
+
+    # Paid parking spaces
+    df["paid_spaces"] = raw_parking_df[
+        ["on_street_paid_spaces", "off_street_paid_private_spaces"]
+    ].sum(axis=1)
+
+    # Total spaces
+    df["spaces"] = df[["paid_spaces", "free_spaces"]].sum(axis=1)
+
+    # Drop zones with zero spaces
+    df = df[df.spaces > 0]
+
+    # Hourly cost
+    hourly_costs = pd.concat(
+        [
             raw_parking_df[
                 [
-                    "on_street_free_spaces",
-                    "off_street_free_spaces",
-                    "off_street_residential_spaces",
+                    "on_street_hourly_cost_during_business",
+                    "on_street_hourly_cost_after_business",
                 ]
-            ]
-            .sum(axis=1)
-            .to_frame("free_spaces")
-        )
+            ].max(axis=1),
+            raw_parking_df[
+                [
+                    "off_street_paid_public_hourly_cost_during_business",
+                    "off_street_paid_public_hourly_cost_after_business",
+                ]
+            ].max(axis=1),
+            raw_parking_df[
+                [
+                    "off_street_paid_private_hourly_cost_during_business",
+                    "off_street_paid_private_hourly_cost_after_business",
+                ]
+            ].max(axis=1),
+        ],
+        axis=1,
+    )
 
-        # Paid parking spaces
-        df["paid_spaces"] = raw_parking_df[
-            ["on_street_paid_spaces", "off_street_paid_private_spaces"]
-        ].sum(axis=1)
-
-        # Total spaces
-        df["spaces"] = df[["paid_spaces", "free_spaces"]].sum(axis=1)
-
-        # Drop zones with zero spaces
-        df = df[df.spaces > 0]
-
-        # Hourly cost
-        hourly_costs = pd.concat(
-            [
-                raw_parking_df[
-                    [
-                        "on_street_hourly_cost_during_business",
-                        "on_street_hourly_cost_after_business",
-                    ]
-                ].max(axis=1),
-                raw_parking_df[
-                    [
-                        "off_street_paid_public_hourly_cost_during_business",
-                        "off_street_paid_public_hourly_cost_after_business",
-                    ]
-                ].max(axis=1),
-                raw_parking_df[
-                    [
-                        "off_street_paid_private_hourly_cost_during_business",
-                        "off_street_paid_private_hourly_cost_after_business",
-                    ]
-                ].max(axis=1),
-            ],
-            axis=1,
-        )
-
-        dummy = ~hourly_costs.isnull().values
-        spaces = raw_parking_df[
-            [
-                "on_street_paid_spaces",
-                "off_street_paid_public_spaces",
-                "off_street_paid_private_spaces",
-            ]
+    dummy = ~hourly_costs.isnull().values
+    spaces = raw_parking_df[
+        [
+            "on_street_paid_spaces",
+            "off_street_paid_public_spaces",
+            "off_street_paid_private_spaces",
         ]
-        # Average weighted hourly cost, skipping NAs
-        df["hourly"] = (hourly_costs * spaces.values).sum(axis=1) / (
-            spaces * dummy
-        ).sum(axis=1)
-        df["hourly"] = hourly_costs.mean(axis=1)
+    ]
+    # Average weighted hourly cost, skipping NAs
+    df["hourly"] = (hourly_costs * spaces.values).sum(axis=1) / (
+        spaces * dummy
+    ).sum(axis=1)
+    df["hourly"] = hourly_costs.mean(axis=1)
 
-        # Daily costs
-        daily_costs = raw_parking_df[
-            ["off_street_paid_public_daily_cost", "off_street_paid_private_daily_cost"]
+    # Daily costs
+    daily_costs = raw_parking_df[
+        ["off_street_paid_public_daily_cost", "off_street_paid_private_daily_cost"]
+    ]
+    dummy = ~daily_costs.isnull().values
+    spaces = raw_parking_df[
+        ["off_street_paid_public_spaces", "off_street_paid_private_spaces"]
+    ]
+    # Average weighted daily cost, skipping NAs
+    df["daily"] = (daily_costs * spaces.values).sum(axis=1) / (spaces * dummy).sum(
+        axis=1
+    )
+    df["daily"] = daily_costs.mean(axis=1)
+
+    # Monthly costs
+    monthly_costs = raw_parking_df[
+        [
+            "off_street_paid_public_monthly_cost",
+            "off_street_paid_private_monthly_cost",
         ]
-        dummy = ~daily_costs.isnull().values
-        spaces = raw_parking_df[
-            ["off_street_paid_public_spaces", "off_street_paid_private_spaces"]
-        ]
-        # Average weighted daily cost, skipping NAs
-        df["daily"] = (daily_costs * spaces.values).sum(axis=1) / (spaces * dummy).sum(
-            axis=1
-        )
-        df["daily"] = daily_costs.mean(axis=1)
+    ]
+    dummy = ~monthly_costs.isnull().values
+    # Average weighted monthly cost, skipping NAs
+    df["monthly"] = (monthly_costs * spaces.values).sum(axis=1) / (
+        spaces * dummy
+    ).sum(axis=1)
+    df["monthly"] = monthly_costs.mean(axis=1)
 
-        # Monthly costs
-        monthly_costs = raw_parking_df[
-            [
-                "off_street_paid_public_monthly_cost",
-                "off_street_paid_private_monthly_cost",
-            ]
-        ]
-        dummy = ~monthly_costs.isnull().values
-        # Average weighted monthly cost, skipping NAs
-        df["monthly"] = (monthly_costs * spaces.values).sum(axis=1) / (
-            spaces * dummy
-        ).sum(axis=1)
-        df["monthly"] = monthly_costs.mean(axis=1)
+    # Can't have $0 costs, replace with NA
+    for cost in ["hourly", "daily", "monthly"]:
+        df[cost] = df[cost].replace(0, np.NaN)
 
-        # Can't have $0 costs, replace with NA
-        for cost in ["hourly", "daily", "monthly"]:
-            df[cost] = df[cost].replace(0, np.NaN)
-
-        return df
+    return df
 
 def MICE_imputation(reduced_df):
     # Step 2: Imputation
@@ -178,20 +178,15 @@ if __name__ == "__main__":
 
     inputs = settings.get('inputs')        
     raw_path = inputs.get("raw_parking_inventory")
-    geometry = inputs.get("geometry")
     raw_parking_df = pd.read_csv(raw_path).set_index("mgra")
-    print("Reading MGRA shapefile data")
-    path = geometry
-    mgra_gdf = gpd.read_file(path).set_index("MGRA")[
-        ["TAZ", "geometry"]
-    ] 
     print("Reducing raw parking data")
     
     reduced_parking_df = parking_reduction(raw_parking_df)
+    # print(reduced_parking_df)
     # combined_df = lu_df.join(reduced_parking_df)
 
     # Impute missing costs
     imputed_parking_df = MICE_imputation(reduced_parking_df)
     imputed_parking_df = label_imputations(imputed_parking_df, reduced_parking_df)
-
+    imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']] = imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']].round(3)
     write_output(imputed_parking_df)
