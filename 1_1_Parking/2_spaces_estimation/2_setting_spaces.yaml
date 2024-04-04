@@ -1,4 +1,3 @@
-space_estimation_method: 'lm'
 cache_dir: "./output/cache"
 output_dir: "./output"
 
@@ -12,5 +11,5 @@ inputs:
   bike_net: "T:/ABM/data/sr15_inputs/landuse_prep/parking_inputs/SANDAG_Bike_Net.shp"
   bike_node: "T:/ABM/data/sr15_inputs/landuse_prep/parking_inputs/SANDAG_Bike_Node.shp"
 
-walk_dist: 0.5
-walk_coef: -0.3
+# walk_dist: 0.5
+# walk_coef: -0.3

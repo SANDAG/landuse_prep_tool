@@ -2,8 +2,14 @@
 import numpy as np
 import os
 import pandas as pd
+import geopandas as gpd
 import sys
 import yaml
+
+lu_lib = os.path.dirname(os.path.dirname(__file__))
+lu_lib = os.path.join(lu_lib, "1_1_Parking/3_costs_estimation")
+sys.path.insert(1, lu_lib)
+import estimate_parking_costs as park_func
 
 # %%
 #Reading properties from config file
@@ -15,6 +21,7 @@ config_file = sys.argv[1]
 
 with open(config_file) as f:
     cfg = yaml.load(f, Loader=yaml.FullLoader)
+
 input_dir = cfg['input_dir']
 scenario_year = cfg['scenario_year']
 write_dir = cfg['output_dir']
@@ -24,16 +31,51 @@ EF_dir = cfg['EF_dir']
 households_file = os.path.join(EF_dir,cfg['households_file'].replace('${scenario_year}', str(scenario_year)))
 persons_file = os.path.join(EF_dir,cfg['persons_file'].replace('${scenario_year}', str(scenario_year)))
 landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
-parking_file = os.path.join(input_dir,cfg['parking_file'].replace('${scenario_year}', str(scenario_year)))
+# parking_file = os.path.join(input_dir,cfg['parking_file'].replace('${scenario_year}', str(scenario_year)))
 # parking_file = os.path.join(input_dir,cfg['parking_file'])
 micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
 hub_mgra_map_file = os.path.join(input_dir,cfg['hubs_mapping'])
-school_dist_file = os.path.join(input_dir,cfg['school_dist_file']) #can be added if not included by E&F team
-# microtransit_file = os.path.join(input_dir,cfg['microtransit_file'])
-# with open(microtransit_file, "r") as f:
-#     microtransit = yaml.safe_load(f)
-#     f.close()  #MicroTransit changes pending
+auxiliary_file = os.path.join(input_dir,cfg['auxiliary_file']) #2019 school, remoteAVParking	refueling_stations
 
+microtransit_file = os.path.join(input_dir,cfg['microtransit_file'])
+with open(microtransit_file, "r") as f:
+    microtransit = yaml.safe_load(f)
+    f.close()  #MicroTransit changes 
+
+#########################################################################
+# out_dir = settings.get("output_dir")
+# inputs = settings.get('inputs')
+method = cfg["space_estimation_method"]
+geometry = os.path.join(input_dir,cfg["geometry"])
+lu_path = landuse_file
+imputed_parking_file = os.path.join(input_dir,cfg["imputed_parking_df"])
+imputed_parking_df = pd.read_csv(imputed_parking_file).set_index('mgra')
+lu_df = pd.read_csv(lu_path).set_index("mgra")
+print("Reading MGRA shapefile data")
+path = geometry
+mgra_gdf = gpd.read_file(path).set_index("MGRA")[ #mgra index removed
+    ["TAZ", "geometry"]
+]
+street_file = os.path.join(input_dir,cfg["street_file"])
+street_data = pd.read_csv(street_file).set_index("MGRA")
+param_file = os.path.join(input_dir,cfg["model_params"])
+model_params = pd.read_csv(param_file)
+max_dist = cfg["walk_dist"]
+walk_coef = cfg["walk_coef"]
+#########################################################################
+#Parking File Creation
+districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
+estimated_space_df = park_func.create_spaces_df(mgra_gdf,lu_df,street_data,model_params,imputed_parking_df,method)
+exp_prkcosts_df = park_func.run_expected_parking_cost(max_dist,walk_coef,districts_df,mgra_gdf,imputed_parking_df,estimated_space_df)
+
+parking_df = exp_prkcosts_df.join(districts_df['parking_type']).join(imputed_parking_df['spaces_reduction'])
+parking_df['spaces_reduction'].fillna(0,inplace=True)
+parking_df.rename(columns={'spaces_reduction':'parking_spaces'},inplace=True)
+parking_df.index = parking_df.index.set_names('mgra')
+# parking_df.to_csv('./parking_file.csv')
+print("Parking df created")
+
+#########################################################################
 # %%
 def process_household()-> pd.DataFrame:
     '''
@@ -44,14 +86,6 @@ def process_household()-> pd.DataFrame:
     '''
     households = pd.read_csv(households_file)
     xref_taz_mgra = pd.read_csv(landuse_file)[['mgra','taz']]
-    #mgra to home_zone_id
-    # series 15 names to previous ABM2+ column names
-    # households_rename_dict = {
-    #     'mgra': 'home_zone_id',#
-    #     'HHADJINC': 'income',
-    #     'VEH': 'auto_ownership',#
-    #     'NP': 'persons',
-    #     'BLD': 'bldgsz'}
     households_rename_dict = {
         'household_id': 'hhid',
         'HHADJINC': 'hinc',
@@ -140,17 +174,6 @@ def process_persons()-> pd.DataFrame:
         If these column names are changed, then the corresponding names need to be changed in the configs.
     '''
     persons = pd.read_csv(persons_file)
-    
-    # series 15 names to previous ABM2+ column names
-    # persons_rename_dict = {
-    #     # 'household_id': 'hhid',
-    #     'SPORDER': 'PNUM',
-    #     'AGEP': 'age',
-    #     'SEX': 'sex',
-    #     'RAC1P': 'rac1p',
-    #     'WKW': 'weeks',
-    #     'WKHP': 'hours',
-    #     'SOC2': 'soc2'}
     persons_rename_dict = {
         'household_id': 'hhid',
         'SPORDER': 'pnum',
@@ -275,10 +298,10 @@ def process_landuse()-> pd.DataFrame:
     '''
     print('Working on Landuse file')
     df_mgra = pd.read_csv(landuse_file)
-    df_parking = pd.read_csv(parking_file)
+    # df_parking = pd.read_csv(parking_file)
     mmfile = pd.read_csv(micro_mobility_file)
     hubs_map = pd.read_csv(hub_mgra_map_file)
-    df_school = pd.read_csv(school_dist_file)
+    df_auxiliary = pd.read_csv(auxiliary_file)
 
 
     #Mapping mobility hubs to mgra
@@ -287,7 +310,6 @@ def process_landuse()-> pd.DataFrame:
     hubs_map['MicroAccessTime'] = hubs_map['MoHubName'].map(mmfile['Access_Time'])
     landuse_rename_dict = {
         'zip': 'zip09',
-        #'emp_tot':'emp_total',
         'majorcollegeenroll_total': 'collegeenroll',
         'othercollegeenroll_total': 'othercollegeenroll',
         'acre': 'acres',
@@ -296,22 +318,21 @@ def process_landuse()-> pd.DataFrame:
         'emp_tot': 'emp_total'}
     df_mgra = df_mgra.rename(columns=landuse_rename_dict)
 
-    merged_df = pd.merge(df_mgra, df_parking, on='mgra', how='left')
-    merged_df = pd.merge(merged_df, df_school, on='mgra', how='left') #School df can be added
+    merged_df = pd.merge(df_mgra, parking_df, on='mgra', how='left')
+    merged_df = pd.merge(merged_df, df_auxiliary, on='mgra', how='left') #School df can be added
     merged_df = pd.merge(merged_df,hubs_map[['MGRA','MicroAccessTime']], left_on='mgra', right_on='MGRA', how='left')
     merged_df = merged_df.drop('MGRA', axis=1)
     merged_df['MicroAccessTime'].fillna(999,inplace=True)
     merged_df['MicroAccessTime']= merged_df['MicroAccessTime'].astype(int)
 
-    # merged_df["microtransit"] = np.zeros(len(merged_df), int)
-    # merged_df["nev"] = np.zeros(len(merged_df), int)
-
-    # for service, info in microtransit['services'].items():
-    #     for mgra_serviced in info['mgras_serviced']:
-    #         # Find the row in the DataFrame where mgra matches
-    #         match_row = merged_df[merged_df['mgra'] == mgra_serviced]
-    #         if not match_row.empty:
-    #             merged_df.loc[match_row.index, info['type']] = info['id']
+    merged_df["microtransit"] = np.zeros(len(merged_df), int)
+    merged_df["nev"] = np.zeros(len(merged_df), int)
+    for service, info in microtransit['services'].items():
+        for mgra_serviced in info['mgras_serviced']:
+            # Find the row in the DataFrame where mgra matches
+            match_row = merged_df[merged_df['mgra'] == mgra_serviced]
+            if not match_row.empty:
+                merged_df.loc[match_row.index, info['type']] = info['id']
 
     return merged_df.sort_values(by='mgra')
 

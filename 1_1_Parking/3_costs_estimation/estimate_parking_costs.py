@@ -9,50 +9,49 @@ import os
 from sklearn.cluster import AgglomerativeClustering
 import alphashape
 
-config = './3_setting_costs.yaml'
-# config = './settings_inventory.yaml'
-with open(config, "r") as stream:
-    try:
-        settings = yaml.load(stream, Loader=yaml.FullLoader)
+# config = './3_setting_costs.yaml'
+# # config = './settings_inventory.yaml'
+# with open(config, "r") as stream:
+#     try:
+#         settings = yaml.load(stream, Loader=yaml.FullLoader)
         
-        print(stream)
-    except yaml.YAMLError as exc:
-        print("ERRRORRR")
-        print(exc)
+#         print(stream)
+#     except yaml.YAMLError as exc:
+#         print("ERRRORRR")
+#         print(exc)
 
-out_dir = settings.get("output_dir")
-inputs = settings.get('inputs')        
-method = settings.get("space_estimation_method")
-geometry = inputs.get("geometry")
-lu_path = inputs.get("lu_file")
-# lu_path = inputs.get("land_use")
-imputed_parking_file = inputs.get("imputed_parking_df")
-imputed_parking_df = pd.read_csv(imputed_parking_file).set_index('mgra')
-lu_df = pd.read_csv(lu_path).set_index("mgra")
+# out_dir = settings.get("output_dir")
+# inputs = settings.get('inputs')        
+# method = settings.get("space_estimation_method")
+# geometry = inputs.get("geometry")
+# lu_path = inputs.get("lu_file")
+# # lu_path = inputs.get("land_use")
+# imputed_parking_file = inputs.get("imputed_parking_df")
+# imputed_parking_df = pd.read_csv(imputed_parking_file).set_index('mgra')
 # lu_df = pd.read_csv(lu_path).set_index("mgra")
-print("Reading MGRA shapefile data")
-path = geometry
-mgra_gdf = gpd.read_file(path).set_index("MGRA")[ #mgra index removed
-    ["TAZ", "geometry"]
-]
-street_file = os.path.join(out_dir, inputs.get("street_file"))
-street_data = pd.read_csv(street_file).set_index("MGRA")
-param_file = os.path.join(out_dir, inputs.get("model_params"))
-model_params = pd.read_csv(param_file)
+# # lu_df = pd.read_csv(lu_path).set_index("mgra")
+# print("Reading MGRA shapefile data")
+# path = geometry
+# mgra_gdf = gpd.read_file(path).set_index("MGRA")[ #mgra index removed
+#     ["TAZ", "geometry"]
+# ]
+# street_file = os.path.join(out_dir, inputs.get("street_file"))
+# street_data = pd.read_csv(street_file).set_index("MGRA")
+# param_file = os.path.join(out_dir, inputs.get("model_params"))
+# model_params = pd.read_csv(param_file)
 
-def create_districts(imputed_parking_df):
+def create_districts(imputed_parking_df,mgra_gdf,max_dist):
 
-    out_dir = settings.get("output_dir")
+    # out_dir = settings.get("output_dir")
          
     print("Creating parking districts")
     districts_dict = parking_districts(
-        imputed_parking_df, mgra_gdf, settings.get("walk_dist")
+        imputed_parking_df, mgra_gdf, max_dist
     )
     
     districts_df = districts_dict['districts'].drop(columns=['geometry'])        
     
-    districts_df.to_csv(os.path.join(out_dir, 'districts.csv'))
-    # combined_df = combined_df.join(districts_df)
+    # districts_df.to_csv(os.path.join(out_dir, 'districts.csv'))
     return districts_df
 
 def parking_districts(imputed_df, mgra_gdf, max_dist):
@@ -167,7 +166,7 @@ def parking_districts(imputed_df, mgra_gdf, max_dist):
 
     return output
 
-def create_spaces_df(mgra_gdf,land_use,street_data,model_params,method='lm'):
+def create_spaces_df(mgra_gdf,land_use,street_data,model_params,imputed_parking_df,method='lm'):
     acres = (mgra_gdf.geometry.area / 43560).to_frame("acres")
     lu = land_use[["hh_sf", "hh_mf", "emp_total"]] #not hh
     full_streetdata_df = street_data[["length", "intcount"]].join(acres).join(lu)
@@ -229,25 +228,25 @@ def prepare_cost_table(parking_df, spaces_df, districts_df, use_imputed=True):
     return costs_df
 
 #depends only on mgra - calculates distances between mgra
-def pre_calc_dist(geos, max_dist, save_dir):
-    dist_path = os.path.join(save_dir, "distances.csv")
+def pre_calc_dist(geos, max_dist):
+    # dist_path = os.path.join(save_dir, "distances.csv")
 
-    if not os.path.isfile(dist_path):
-        dist_matrix = np.zeros([len(geos.index)] * 2)
-        for i, zone in enumerate(tqdm(geos.index)):
-            dist_matrix[i, :] = geos.distance(geos.loc[zone]) / 5280
-        dist_df = pd.DataFrame(dist_matrix, index=geos.index, columns=geos.index)
-        dist_df.index.name = "OZONE"
-        dist_df = dist_df.reset_index().melt(
-            id_vars="OZONE", var_name="DZONE", value_name="dist"
-        )
-        dist_df = dist_df[dist_df.dist <= max_dist]
-        dist_df = dist_df.reset_index()
+    # if not os.path.isfile(dist_path):
+    dist_matrix = np.zeros([len(geos.index)] * 2)
+    for i, zone in enumerate(tqdm(geos.index)):
+        dist_matrix[i, :] = geos.distance(geos.loc[zone]) / 5280
+    dist_df = pd.DataFrame(dist_matrix, index=geos.index, columns=geos.index)
+    dist_df.index.name = "OZONE"
+    dist_df = dist_df.reset_index().melt(
+        id_vars="OZONE", var_name="DZONE", value_name="dist"
+    )
+    dist_df = dist_df[dist_df.dist <= max_dist]
+    dist_df = dist_df.reset_index()
 
         # Store cached distances
-        dist_df.to_csv(dist_path)
-    else:
-        dist_df = pd.read_csv(dist_path)
+    #     dist_df.to_csv(dist_path)
+    # else:
+    #     dist_df = pd.read_csv(dist_path)
 
     dist_df = dist_df.set_index("DZONE")
 
@@ -287,10 +286,7 @@ def expected_parking_cost(dest_id,costs_df,dist_df,walk_coef,cost_type=["hourly"
     
     return expected_cost
 
-def run_expected_parking_cost():
-    out_dir = settings.get("output_dir")
-    max_dist = settings.get("walk_dist")
-    walk_coef = settings.get("walk_coef")
+def run_expected_parking_cost(max_dist,walk_coef,districts_df,mgra_gdf,imputed_parking_df,estimated_space_df):
     district_ids = districts_df[districts_df.is_prkdistrict].index.unique()
     geos = mgra_gdf.loc[district_ids].geometry
     # districts_df = create_districts(imputed_parking_df)
@@ -298,7 +294,7 @@ def run_expected_parking_cost():
 
     costs_df = prepare_cost_table(imputed_parking_df, estimated_space_df, districts_df)
     print("pre-calculate walk distance matrix")
-    dist_df = pre_calc_dist(geos, max_dist, out_dir)
+    dist_df = pre_calc_dist(geos, max_dist)
     # Calculate expected cost for all zones in districts, all else are 0 cost
     exp_prkcosts = [
             expected_parking_cost(x, costs_df, dist_df, walk_coef)
@@ -314,13 +310,13 @@ def run_expected_parking_cost():
     exp_prkcosts_df = exp_prkcosts_df.fillna(0)
     return exp_prkcosts_df.round(3)
 
-districts_df = create_districts(imputed_parking_df)
-estimated_space_df = create_spaces_df(mgra_gdf,lu_df,street_data,model_params,method)
-exp_prkcosts_df = run_expected_parking_cost()
+# districts_df = create_districts(imputed_parking_df)
+# estimated_space_df = create_spaces_df(mgra_gdf,lu_df,street_data,model_params,method)
+# exp_prkcosts_df = run_expected_parking_cost()
 
-output_df = exp_prkcosts_df.join(districts_df['parking_type']).join(imputed_parking_df['spaces_reduction'])
-output_df['spaces_reduction'].fillna(0,inplace=True)
-output_df.rename(columns={'spaces_reduction':'parking_spaces'},inplace=True)
-output_df.index = output_df.index.set_names('mgra')
-out_path = settings.get("output_file")
-output_df.to_csv(out_path)
+# output_df = exp_prkcosts_df.join(districts_df['parking_type']).join(imputed_parking_df['spaces_reduction'])
+# output_df['spaces_reduction'].fillna(0,inplace=True)
+# output_df.rename(columns={'spaces_reduction':'parking_spaces'},inplace=True)
+# output_df.index = output_df.index.set_names('mgra')
+# out_path = settings.get("output_file")
+# output_df.to_csv(out_path)
