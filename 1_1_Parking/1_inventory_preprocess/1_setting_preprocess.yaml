@@ -1,9 +1,5 @@
-output_dir: "./output"
+output_dir: "T:/ABM/data/sr15_inputs/landuse_prep/parking_outputs"
 
 # Inputs
 inputs:
   raw_parking_inventory: "T:/ABM/data/sr15_inputs/landuse_prep/parking_inputs/mgra_parking_inventory.csv"
-
-# Parameters
-walk_dist: 0.5
-walk_coef: -0.3

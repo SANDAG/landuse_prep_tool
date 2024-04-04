@@ -1,12 +1,12 @@
 space_estimation_method: 'lm'
 cache_dir: "./output/cache"
-output_dir: "./output"
+output_dir: "T:/ABM/data/sr15_inputs/landuse_prep/parking_outputs"
 
 # Inputs
 inputs:
   lu_file: "T:/socioec/Current_Projects/SR15/S0/version16/abm_csv/mgra15_based_input_2035.csv"
   geometry: "T:/ABM/data/sr15_inputs/landuse_prep/parking_inputs/mgra15.shp"
-  imputed_parking_df: "./output/imputed_parking_costs.csv"
+  imputed_parking_df: ""T:/ABM/data/sr15_inputs/landuse_prep/parking_outputs/imputed_parking_costs.csv"
   street_file : "aggregated_street_data.csv"
   model_params: "ols_params.csv"
   # districts : "./output/districts.csv"
