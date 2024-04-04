@@ -189,4 +189,5 @@ if __name__ == "__main__":
     imputed_parking_df = MICE_imputation(reduced_parking_df)
     imputed_parking_df = label_imputations(imputed_parking_df, reduced_parking_df)
     imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']] = imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']].round(3)
+    imputed_parking_df = imputed_parking_df.join(reduced_parking_df['spaces'],rsuffix='_reduction')
     write_output(imputed_parking_df)
