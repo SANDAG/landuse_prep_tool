@@ -62,19 +62,59 @@ param_file = os.path.join(input_dir,cfg["model_params"])
 model_params = pd.read_csv(param_file)
 max_dist = cfg["walk_dist"]
 walk_coef = cfg["walk_coef"]
+
+#Parking Policy
+policy_flag = cfg['implement_policy']
+if policy_flag:
+    parking_policy = os.path.join(input_dir,cfg['parking_policy'])
+    mgra_moHub_map = os.path.join(input_dir,cfg['mgra_moHub_map'])
+    rate = cfg['update_rate']
 #########################################################################
 #Parking File Creation
-districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
-estimated_space_df = park_func.create_spaces_df(mgra_gdf,lu_df,street_data,model_params,imputed_parking_df,method)
-exp_prkcosts_df = park_func.run_expected_parking_cost(max_dist,walk_coef,districts_df,mgra_gdf,imputed_parking_df,estimated_space_df)
+def parking_costs()-> pd.DataFrame:
+    districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
+    estimated_space_df = park_func.create_spaces_df(mgra_gdf,lu_df,street_data,model_params,imputed_parking_df,method)
+    exp_prkcosts_df = park_func.run_expected_parking_cost(max_dist,walk_coef,districts_df,mgra_gdf,imputed_parking_df,estimated_space_df)
 
-parking_df = exp_prkcosts_df.join(districts_df['parking_type']).join(imputed_parking_df['spaces_reduction'])
-parking_df['spaces_reduction'].fillna(0,inplace=True)
-parking_df.rename(columns={'spaces_reduction':'parking_spaces'},inplace=True)
-parking_df.index = parking_df.index.set_names('mgra')
-# parking_df.to_csv('./parking_file.csv')
+    parking_df = exp_prkcosts_df.join(districts_df['parking_type']).join(imputed_parking_df['spaces_reduction'])
+    parking_df['spaces_reduction'].fillna(0,inplace=True)
+    parking_df.rename(columns={'spaces_reduction':'parking_spaces'},inplace=True)
+    parking_df.index = parking_df.index.set_names('mgra')
+    return parking_df
+    # parking_df.to_csv('./parking_file.csv')
+
+def process_parking_policy()-> pd.DataFrame:
+    df_policy = pd.read_csv(parking_policy)
+    df_mohub = pd.read_csv(mgra_moHub_map)
+    mgra_parking_rates = pd.merge(df_mohub,df_policy,on='MoHubType',how='left')
+    mgra_parking_rates.loc[mgra_parking_rates['PARKCOV_ID'].isnull(),['Hourly','Daily','Monthly']] = None
+    mgra_parking_rates = mgra_parking_rates[['mgra','Hourly','Daily','Monthly']]
+    mgra_parking_rates.dropna(subset=['Hourly'],inplace=True) #Removing all mgra where we don't provide a new parking rate
+    merged_df = pd.merge(imputed_parking_df,mgra_parking_rates,on='mgra',how='outer')
+
+    merged_df['Hourly'] = merged_df['Hourly']*rate
+    merged_df['Daily'] = merged_df['Daily']*rate
+    merged_df['Monthly'] = merged_df['Monthly']*rate
+    
+    merged_df['hourly_imputed'] = np.where(merged_df['Hourly'].isna(),merged_df['hourly_imputed'],merged_df['Hourly'])
+    merged_df['daily_imputed'] = np.where(merged_df['Daily'].isna(),merged_df['daily_imputed'],merged_df['Daily'])
+    merged_df['monthly_imputed'] = np.where(merged_df['Monthly'].isna(),merged_df['monthly_imputed'],merged_df['Monthly'])
+
+    # merged_df[['hourly_imputed','daily_imputed','monthly_imputed']]=merged_df[['Hourly','Daily','Monthly']]
+    merged_df.drop(columns=['Hourly','Daily','Monthly'],inplace=True)
+    merged_df.set_index('mgra', inplace=True)
+    merged_df.sort_index(ascending=True, inplace=True)
+    # print(merged_df['hourly_imputed'].isna().sum(),merged_df[['hourly_imputed','daily_imputed','monthly_imputed']].tail(20))
+
+    return merged_df
+
+
+if policy_flag:
+    imputed_parking_df = process_parking_policy()
+    # print(imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']])
+
+parking_df = parking_costs()
 print("Parking df created")
-
 #########################################################################
 # %%
 def process_household()-> pd.DataFrame:
