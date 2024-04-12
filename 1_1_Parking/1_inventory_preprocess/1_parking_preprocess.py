@@ -26,10 +26,10 @@ def parking_reduction(raw_parking_df):
     ].sum(axis=1)
 
     # Total spaces
-    df["spaces"] = df[["paid_spaces", "free_spaces"]].sum(axis=1)
+    df["total_spaces"] = df[["paid_spaces", "free_spaces"]].sum(axis=1)
 
     # Drop zones with zero spaces
-    df = df[df.spaces > 0]
+    df = df[df.total_spaces > 0]
 
     # Hourly cost
     hourly_costs = pd.concat(
@@ -57,7 +57,7 @@ def parking_reduction(raw_parking_df):
     )
 
     dummy = ~hourly_costs.isnull().values
-    spaces = raw_parking_df[
+    spaces_df = raw_parking_df[
         [
             "on_street_paid_spaces",
             "off_street_paid_public_spaces",
@@ -65,8 +65,8 @@ def parking_reduction(raw_parking_df):
         ]
     ]
     # Average weighted hourly cost, skipping NAs
-    df["hourly"] = (hourly_costs * spaces.values).sum(axis=1) / (
-        spaces * dummy
+    df["hourly"] = (hourly_costs * spaces_df.values).sum(axis=1) / (
+        spaces_df * dummy
     ).sum(axis=1)
     df["hourly"] = hourly_costs.mean(axis=1)
 
@@ -75,11 +75,11 @@ def parking_reduction(raw_parking_df):
         ["off_street_paid_public_daily_cost", "off_street_paid_private_daily_cost"]
     ]
     dummy = ~daily_costs.isnull().values
-    spaces = raw_parking_df[
+    spaces_df = raw_parking_df[
         ["off_street_paid_public_spaces", "off_street_paid_private_spaces"]
     ]
     # Average weighted daily cost, skipping NAs
-    df["daily"] = (daily_costs * spaces.values).sum(axis=1) / (spaces * dummy).sum(
+    df["daily"] = (daily_costs * spaces_df.values).sum(axis=1) / (spaces_df * dummy).sum(
         axis=1
     )
     df["daily"] = daily_costs.mean(axis=1)
@@ -93,8 +93,8 @@ def parking_reduction(raw_parking_df):
     ]
     dummy = ~monthly_costs.isnull().values
     # Average weighted monthly cost, skipping NAs
-    df["monthly"] = (monthly_costs * spaces.values).sum(axis=1) / (
-        spaces * dummy
+    df["monthly"] = (monthly_costs * spaces_df.values).sum(axis=1) / (
+        spaces_df * dummy
     ).sum(axis=1)
     df["monthly"] = monthly_costs.mean(axis=1)
 
@@ -107,6 +107,7 @@ def parking_reduction(raw_parking_df):
 def MICE_imputation(reduced_df):
     # Step 2: Imputation
     model_df = reduced_df.copy()
+    print(model_df.columns)
     # Remove 999s
     model_df[model_df > 999] = None
     model_df = model_df.drop(
@@ -189,5 +190,4 @@ if __name__ == "__main__":
     imputed_parking_df = MICE_imputation(reduced_parking_df)
     imputed_parking_df = label_imputations(imputed_parking_df, reduced_parking_df)
     imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']] = imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']].round(3)
-    imputed_parking_df = imputed_parking_df.join(reduced_parking_df['spaces'],rsuffix='_reduction')
     write_output(imputed_parking_df)
