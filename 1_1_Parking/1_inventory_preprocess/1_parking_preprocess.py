@@ -106,10 +106,8 @@ def parking_reduction(raw_parking_df):
 
 def MICE_imputation(reduced_df):
     # Step 2: Imputation
-    model_df = reduced_df.copy()
-    print(model_df.columns)
-    # Remove 999s
-    model_df[model_df > 999] = None
+    model_df = reduced_df[['paid_spaces','free_spaces',"hourly", "daily", "monthly"]].copy()
+
     model_df = model_df.drop(
         columns=[x for x in model_df.columns if "imputed" in x]
     )
@@ -167,7 +165,6 @@ def write_output(combined_df):
 if __name__ == "__main__":
     
     config = './1_setting_preprocess.yaml'
-    # config = './settings_inventory.yaml'
     with open(config, "r") as stream:
         try:
             settings = yaml.load(stream, Loader=yaml.FullLoader)
@@ -183,11 +180,10 @@ if __name__ == "__main__":
     print("Reducing raw parking data")
     
     reduced_parking_df = parking_reduction(raw_parking_df)
-    # print(reduced_parking_df)
-    # combined_df = lu_df.join(reduced_parking_df)
 
     # Impute missing costs
     imputed_parking_df = MICE_imputation(reduced_parking_df)
     imputed_parking_df = label_imputations(imputed_parking_df, reduced_parking_df)
+    imputed_parking_df['total_spaces'] = imputed_parking_df['paid_spaces'] + imputed_parking_df['free_spaces']
     imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']] = imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']].round(3)
     write_output(imputed_parking_df)
