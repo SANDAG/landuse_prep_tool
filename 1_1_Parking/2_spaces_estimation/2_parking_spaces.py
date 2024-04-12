@@ -44,7 +44,7 @@ def run_space_estimation():
     assert isinstance(imputed_parking_df, pd.DataFrame)
     assert isinstance(base_lu_df, pd.DataFrame)
 
-    parking_df = imputed_parking_df[["spaces"]]
+    parking_df = imputed_parking_df[["paid_spaces","free_spaces","total_spaces"]]
     street_data = get_streetdata(mgra_gdf)
     street_data["estimated_spaces"] = model_fit(
         street_data, parking_df, mgra_gdf, base_lu_df
@@ -138,24 +138,54 @@ def model_fit(street_data, parking_df, mgra_gdf, land_use):
 
     model_df = parking_df.join(street_data[["length", "intcount"]])
     model_df = model_df.join(acres)
-    model_df = model_df[(model_df.spaces > 0) & (model_df.length > 0)] #Length is diff from RSG model so 20 more records
     model_df["length_per_acre"] = model_df.length / model_df.acres
     model_df["int_per_acre"] = model_df.intcount / model_df.acres
     model_df["avg_block_length"] = model_df.length / model_df.intcount.clip(1)
     model_df = model_df.join(land_use[["hh", "hh_sf", "hh_mf", "emp_total"]])
-    print(model_df.head(5))
+
+    # Free spaces model fit
+    model_df_free = model_df[(model_df.free_spaces > 0) & (model_df.length > 0)] 
+    model_df_paid = model_df[(model_df.paid_spaces > 0) & (model_df.length > 0)]
+    model_df_total = model_df[(model_df.total_spaces > 0) & (model_df.length > 0)]
+    
     # Formula
-    f = "spaces ~ 0 + length + intcount + acres + hh_sf + hh_mf + emp_total"
+    f_free = "free_spaces ~ 0 + length + intcount + acres + hh_sf + hh_mf + emp_total"
+    f_paid = "paid_spaces ~ 0 + length + intcount + acres + hh_sf + hh_mf + emp_total"
+    f_total = "total_spaces ~ 0 + length + intcount + acres + hh_sf + hh_mf + emp_total"
 
     # Estimate model
-    mod_lm = smf.ols(formula=f, data=model_df).fit()
-    print(mod_lm.summary())
-    prams_path = os.path.join(out_dir, 'ols_params.csv')
-    # with open(model_path, 'wb') as f:
-    #     pickle.dump(mod_lm, f)
-    model_params = mod_lm.params.to_frame().reset_index()
-    model_params.columns = ['feature', 'parameter']
-    model_params.to_csv(prams_path, index=False)
+    mod_lm_free = smf.ols(formula=f_free, data=model_df_free).fit()
+    mod_lm_paid = smf.ols(formula=f_paid, data=model_df_paid).fit()
+    mod_lm_total = smf.ols(formula=f_total, data=model_df_total).fit()
+
+    print(mod_lm_total.summary())
+
+    # Create summaries
+    summary1 = mod_lm_free.summary()
+    summary2 = mod_lm_paid.summary()
+    summary3 = mod_lm_total.summary()
+
+    # Convert summaries to dataframes
+    summary_df1 = pd.DataFrame(summary1.tables[1])
+    summary_df2 = pd.DataFrame(summary2.tables[1])
+    summary_df3 = pd.DataFrame(summary3.tables[1])
+    summary_df1['R-squared'] = mod_lm_free.rsquared
+    summary_df2['R-squared'] = mod_lm_paid.rsquared
+    summary_df3['R-squared'] = mod_lm_total.rsquared
+
+    # Save dataframes to Excel
+    with pd.ExcelWriter(os.path.join(out_dir, 'spaces_ols_summaries.xlsx')) as writer:
+        summary_df1.to_excel(writer, sheet_name='Free Spaces Summary', index=False)
+        summary_df2.to_excel(writer, sheet_name='Paid Spaces Summary', index=False)
+        summary_df3.to_excel(writer, sheet_name='Total Spaces Summary', index=False)
+        
+
+    # Have to save the model parameters
+    # prams_path = os.path.join(out_dir, 'ols_params.csv')
+
+    # model_params = mod_lm.params.to_frame().reset_index()
+    # model_params.columns = ['feature', 'parameter']
+    # model_params.to_csv(prams_path, index=False)
     #Shldn't intersection co-eff be -ve?
 
 if __name__=="__main__":
