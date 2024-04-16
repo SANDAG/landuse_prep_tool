@@ -146,46 +146,50 @@ def model_fit(street_data, parking_df, mgra_gdf, land_use):
     # Free spaces model fit
     model_df_free = model_df[(model_df.free_spaces > 0) & (model_df.length > 0)] 
     model_df_paid = model_df[(model_df.paid_spaces > 0) & (model_df.length > 0)]
-    model_df_total = model_df[(model_df.total_spaces > 0) & (model_df.length > 0)]
+    # model_df_total = model_df[(model_df.total_spaces > 0) & (model_df.length > 0)]
     
     # Formula
-    f_free = "free_spaces ~ 0 + length + intcount + acres + hh_sf + hh_mf + emp_total"
-    f_paid = "paid_spaces ~ 0 + length + intcount + acres + hh_sf + hh_mf + emp_total"
-    f_total = "total_spaces ~ 0 + length + intcount + acres + hh_sf + hh_mf + emp_total"
+    f_free = "free_spaces ~ 0 + length + intcount + hh_sf + hh_mf + emp_total"
+    f_paid = "paid_spaces ~ 0 + length + intcount + acres + hh_sf + emp_total"
+    # f_total = "total_spaces ~ 0 + length + intcount + acres + hh_sf + hh_mf + emp_total"
 
     # Estimate model
     mod_lm_free = smf.ols(formula=f_free, data=model_df_free).fit()
     mod_lm_paid = smf.ols(formula=f_paid, data=model_df_paid).fit()
-    mod_lm_total = smf.ols(formula=f_total, data=model_df_total).fit()
+    # mod_lm_total = smf.ols(formula=f_total, data=model_df_total).fit()
 
-    print(mod_lm_total.summary())
 
     # Create summaries
     summary1 = mod_lm_free.summary()
     summary2 = mod_lm_paid.summary()
-    summary3 = mod_lm_total.summary()
+    # summary3 = mod_lm_total.summary()
 
     # Convert summaries to dataframes
-    summary_df1 = pd.DataFrame(summary1.tables[1])
-    summary_df2 = pd.DataFrame(summary2.tables[1])
-    summary_df3 = pd.DataFrame(summary3.tables[1])
-    summary_df1['R-squared'] = mod_lm_free.rsquared
-    summary_df2['R-squared'] = mod_lm_paid.rsquared
-    summary_df3['R-squared'] = mod_lm_total.rsquared
+    # summary_df1 = pd.DataFrame(summary1.tables[1])
+    # summary_df2 = pd.DataFrame(summary2.tables[1])
+    # # summary_df3 = pd.DataFrame(summary3.tables[1])
+    # summary_df1['R-squared'] = mod_lm_free.rsquared
+    # summary_df2['R-squared'] = mod_lm_paid.rsquared
+    # # summary_df3['R-squared'] = mod_lm_total.rsquared
 
-    # Save dataframes to Excel
-    with pd.ExcelWriter(os.path.join(out_dir, 'spaces_ols_summaries.xlsx')) as writer:
-        summary_df1.to_excel(writer, sheet_name='Free Spaces Summary', index=False)
-        summary_df2.to_excel(writer, sheet_name='Paid Spaces Summary', index=False)
-        summary_df3.to_excel(writer, sheet_name='Total Spaces Summary', index=False)
+    # # Save dataframes to Excel
+    # with pd.ExcelWriter(os.path.join(out_dir, 'spaces_ols_summaries1.xlsx')) as writer:
+    #     summary_df1.to_excel(writer, sheet_name='Free Spaces Summary', index=False)
+    #     summary_df2.to_excel(writer, sheet_name='Paid Spaces Summary', index=False)
+    #     summary_df3.to_excel(writer, sheet_name='Total Spaces Summary', index=False)
         
 
     # Have to save the model parameters
-    # prams_path = os.path.join(out_dir, 'ols_params.csv')
+    prams_path1 = os.path.join(out_dir, 'free_spaces_ols_params.csv')
+    prams_path2 = os.path.join(out_dir, 'paid_spaces_ols_params.csv')
 
-    # model_params = mod_lm.params.to_frame().reset_index()
-    # model_params.columns = ['feature', 'parameter']
-    # model_params.to_csv(prams_path, index=False)
+    model_params1 = mod_lm_free.params.to_frame().reset_index()
+    model_params1.columns = ['feature', 'parameter']
+    model_params1.to_csv(prams_path1, index=False)
+
+    model_params2 = mod_lm_paid.params.to_frame().reset_index()
+    model_params2.columns = ['feature', 'parameter']
+    model_params2.to_csv(prams_path2, index=False)
     #Shldn't intersection co-eff be -ve?
 
 if __name__=="__main__":
