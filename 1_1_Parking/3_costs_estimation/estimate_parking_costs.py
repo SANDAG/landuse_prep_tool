@@ -14,8 +14,7 @@ def create_districts(imputed_df, mgra_gdf, max_dist):
     paid_zones = mgra_gdf.loc[
         imputed_df[imputed_df.paid_spaces > 0].index, ["TAZ", "geometry"]
     ]
-    print(paid_zones.shape)
-
+    
     # Calculate similarity matrix of ever zone to zone pair on their geometries not centroid
     print("Calculating similarity matrix")
     data_matrix = np.zeros([len(paid_zones)] * 2)
@@ -125,7 +124,6 @@ def create_districts(imputed_df, mgra_gdf, max_dist):
     return districts_df
 
 def estimate_spaces_df(street_data,model_params,method='lm'):
-    # print(street_data,model_params)
     #Linear model prediction
     if method == "lm":
         temp_spaces = street_data.dot(model_params.set_index('feature')['parameter']).clip(0)
@@ -135,7 +133,6 @@ def estimate_spaces_df(street_data,model_params,method='lm'):
             street_data.length, street_data.intcount
         ).astype(int)
 
-    # temp_spaces.to_csv('spaces_df.csv', index=True)
     return temp_spaces
 
 def calculate_spaces(length, intcount):
@@ -176,7 +173,7 @@ def expected_parking_cost(dest_id,costs_df,dist_df,walk_coef,cost_type=["hourly"
             # denominator = sum(e^{dist * \beta_{dist}} * spaces)
             numer = np.nansum(expo * dest_df[cost_type].values.T, axis=1)
             denom = np.nansum(expo)
-
+        
             if denom > 0:
                 expected_cost = dict(zip(cost_type, numer / denom))
             else:

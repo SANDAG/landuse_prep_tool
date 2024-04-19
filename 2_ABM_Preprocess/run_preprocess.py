@@ -34,11 +34,12 @@ landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}
 # parking_file = os.path.join(input_dir,cfg['parking_file'].replace('${scenario_year}', str(scenario_year)))
 # parking_file = os.path.join(input_dir,cfg['parking_file'])
 micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
-hub_mgra_map_file = os.path.join(input_dir,cfg['hubs_mapping'])
+# hub_mgra_map_file = os.path.join(input_dir,cfg['hubs_mapping_file'])
+mgra_moHub_map = os.path.join(input_dir,cfg['mgra_moHub_map'])
+
 auxiliary_file = os.path.join(input_dir,cfg['auxiliary_file']) #2019 school, remoteAVParking	refueling_stations
 
-microtransit_file = os.path.join(input_dir,cfg['microtransit_file'])
-with open(microtransit_file, "r") as f:
+with open(os.path.join(input_dir,cfg['microtransit_file']), "r") as f:
     microtransit = yaml.safe_load(f)
     f.close()  #MicroTransit changes 
 
@@ -46,18 +47,13 @@ with open(microtransit_file, "r") as f:
 # out_dir = settings.get("output_dir")
 # inputs = settings.get('inputs')
 method = cfg["space_estimation_method"]
-geometry = os.path.join(input_dir,cfg["geometry"])
-lu_path = landuse_file
-imputed_parking_file = os.path.join(input_dir,cfg["imputed_parking_df"])
-imputed_parking_df = pd.read_csv(imputed_parking_file).set_index('mgra')
-lu_df = pd.read_csv(lu_path).set_index("mgra")
+imputed_parking_df = pd.read_csv(os.path.join(input_dir,cfg["imputed_parking_df"])).set_index('mgra')
+lu_df = pd.read_csv(landuse_file).set_index("mgra")
 print("Reading MGRA shapefile data")
-path = geometry
-mgra_gdf = gpd.read_file(path).set_index("MGRA")[ #mgra index removed
+mgra_gdf = gpd.read_file(os.path.join(input_dir,cfg["geometry_file"])).set_index("MGRA")[ #mgra index removed
     ["TAZ", "geometry"]
 ]
-street_file = os.path.join(input_dir,cfg["street_file"])
-street_data = pd.read_csv(street_file).set_index("MGRA")
+street_data = pd.read_csv(os.path.join(input_dir,cfg["street_file"])).set_index("MGRA")
 model_params_free = pd.read_csv(os.path.join(input_dir,cfg["model_params_free"]))
 model_params_paid = pd.read_csv(os.path.join(input_dir,cfg["model_params_paid"]))
 max_dist = cfg["walk_dist"]
@@ -66,6 +62,8 @@ walk_coef = cfg["walk_coef"]
 #Parking Policy
 policy_flag = cfg['implement_policy']
 if policy_flag:
+    policy_type = cfg['policy_type']
+    print(f"Applying parking policy to {policy_type} MGRAs")
     parking_policy = os.path.join(input_dir,cfg['parking_policy'])
     mgra_moHub_map = os.path.join(input_dir,cfg['mgra_moHub_map'])
     rate = cfg['update_rate']
@@ -76,18 +74,16 @@ def parking_costs()-> pd.DataFrame:
     full_streetdata_df = street_data[["length", "intcount"]].join(acres).join(lu_df[["hh_sf", "hh_mf", "emp_total"]])
     
     global imputed_parking_df
-    #TODO remove column name in function call
-    #estimated_space_df is full street data with estimated parking spaces
-    full_streetdata_df['est_paid_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "acres", "hh_sf", "emp_total"]],model_params_paid,'est_paid_spaces')
+    full_streetdata_df['est_paid_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "acres", "hh_sf", "emp_total"]],model_params_paid)
 
-    #TODO Using imputed hourly costs
+    #replacing empty paid spaces with estimated values
     imputed_parking_df.loc[(imputed_parking_df.hourly_imputed>0) & ((imputed_parking_df.paid_spaces<=0) | (pd.isnull(imputed_parking_df['paid_spaces']))),'paid_spaces']=full_streetdata_df['est_paid_spaces']
     
+    #Creating Districts with updated imputed_parking_df
     districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
-    # 
+    
     full_streetdata_df['est_free_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "hh_sf", "hh_mf", "emp_total"]],model_params_free)
-    # full_streetdata_df.to_csv("./full_streetdata_df.csv")
-    #TODO
+
     cost_df = districts_df.loc[districts_df.is_prkdistrict]
     cost_df = cost_df.join(full_streetdata_df[["est_paid_spaces","est_free_spaces"]],how='left')
 
@@ -98,6 +94,7 @@ def parking_costs()-> pd.DataFrame:
 
     cost_df = cost_df.join(imputed_parking_df[["hourly", "daily", "monthly",'paid_spaces','free_spaces']])
 
+    #Updating spaces wrt parking type and existing spaces
     cost_df[['paid_spaces','free_spaces']]=cost_df[['paid_spaces','free_spaces']].fillna(0)
     cost_df['cost_spaces']=0
     cost_df.loc[(cost_df['parking_type']==1) & (cost_df['paid_spaces']>0),'cost_spaces'] = cost_df["paid_spaces"]
@@ -108,21 +105,23 @@ def parking_costs()-> pd.DataFrame:
     
     exp_prkcosts_df = park_func.run_expected_parking_cost(max_dist,walk_coef,districts_df,mgra_gdf,cost_df)
     imputed_parking_df['total_spaces'] = imputed_parking_df[["paid_spaces", "free_spaces"]].sum(axis=1)
-    imputed_parking_df.to_csv('./imputed_df.csv')
-    #TODO spaces reduction to new spaces? Total spaces = free+paid(including estimated)
+    
     parking_df = exp_prkcosts_df.join(districts_df['parking_type']).join(imputed_parking_df['total_spaces'])
     parking_df['total_spaces'].fillna(0,inplace=True)
     parking_df.rename(columns={'total_spaces':'parking_spaces'},inplace=True)
     parking_df.index = parking_df.index.set_names('mgra')
-    # parking_df.to_csv(os.path.join(write_dir, 'parking_df_50s.csv'), index=True)
-    parking_df.to_csv("./parking_df.csv")
+    
+    # parking_df.to_csv("./parking_df.csv")
     return parking_df
 
 def process_parking_policy()-> pd.DataFrame:
     df_policy = pd.read_csv(parking_policy)
     df_mohub = pd.read_csv(mgra_moHub_map)
     mgra_parking_rates = pd.merge(df_mohub,df_policy,on='MoHubType',how='left')
-    mgra_parking_rates.loc[mgra_parking_rates['PARKCOV_ID'].isnull(),['Hourly','Daily','Monthly']] = None
+
+    if policy_type == 'pca':
+        mgra_parking_rates.loc[mgra_parking_rates['PARKCOV_ID'].isnull(),['Hourly','Daily','Monthly']] = None
+
     mgra_parking_rates = mgra_parking_rates[['mgra','Hourly','Daily','Monthly']]
     mgra_parking_rates.dropna(subset=['Hourly'],inplace=True) #Removing all mgra where we don't provide a new parking rate
     merged_df = pd.merge(imputed_parking_df,mgra_parking_rates,on='mgra',how='outer')
@@ -130,8 +129,6 @@ def process_parking_policy()-> pd.DataFrame:
     merged_df['Hourly'] = merged_df['Hourly']*rate
     merged_df['Daily'] = merged_df['Daily']*rate
     merged_df['Monthly'] = merged_df['Monthly']*rate
-
-    # merged_df.to_csv(os.path.join(write_dir, 'merged_df1.csv'), index=True)
 
     merged_df['hourly_imputed'] = np.where(merged_df['Hourly'].isna(),merged_df['hourly_imputed'],merged_df['Hourly'])
     merged_df['daily_imputed'] = np.where(merged_df['Daily'].isna(),merged_df['daily_imputed'],merged_df['Daily'])
@@ -149,7 +146,7 @@ def process_parking_policy()-> pd.DataFrame:
 
 if policy_flag:
     imputed_parking_df = process_parking_policy()
-    # print(imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']])
+    print(imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']])
 
 parking_df = parking_costs()
 print("Parking df created")
@@ -379,7 +376,7 @@ def process_landuse()-> pd.DataFrame:
     df_mgra = pd.read_csv(landuse_file)
     # df_parking = pd.read_csv(parking_file)
     mmfile = pd.read_csv(micro_mobility_file)
-    hubs_map = pd.read_csv(hub_mgra_map_file)
+    hubs_map = pd.read_csv(mgra_moHub_map)
     df_auxiliary = pd.read_csv(auxiliary_file)
 
 
@@ -399,8 +396,8 @@ def process_landuse()-> pd.DataFrame:
 
     merged_df = pd.merge(df_mgra, parking_df, on='mgra', how='left')
     merged_df = pd.merge(merged_df, df_auxiliary, on='mgra', how='left') #School df can be added
-    merged_df = pd.merge(merged_df,hubs_map[['MGRA','MicroAccessTime']], left_on='mgra', right_on='MGRA', how='left')
-    merged_df = merged_df.drop('MGRA', axis=1)
+    merged_df = pd.merge(merged_df,hubs_map[['mgra','MicroAccessTime']], how='left')
+    # merged_df = merged_df.drop('MGRA', axis=1)
     merged_df['MicroAccessTime'].fillna(999,inplace=True)
     merged_df['MicroAccessTime']= merged_df['MicroAccessTime'].astype(int)
 
