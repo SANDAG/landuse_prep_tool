@@ -31,8 +31,7 @@ EF_dir = cfg['EF_dir']
 households_file = os.path.join(EF_dir,cfg['households_file'].replace('${scenario_year}', str(scenario_year)))
 persons_file = os.path.join(EF_dir,cfg['persons_file'].replace('${scenario_year}', str(scenario_year)))
 landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
-# parking_file = os.path.join(input_dir,cfg['parking_file'].replace('${scenario_year}', str(scenario_year)))
-# parking_file = os.path.join(input_dir,cfg['parking_file'])
+
 micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
 # hub_mgra_map_file = os.path.join(input_dir,cfg['hubs_mapping_file'])
 mgra_moHub_map = os.path.join(input_dir,cfg['mgra_moHub_map'])
@@ -64,7 +63,7 @@ policy_flag = cfg['implement_policy']
 if policy_flag:
     policy_type = cfg['policy_type']
     print(f"Applying parking policy to {policy_type} MGRAs")
-    parking_policy = os.path.join(input_dir,cfg['parking_policy'])
+    parking_policy = os.path.join(input_dir,cfg['parking_policy'].replace('${scenario_year}', str(scenario_year)))
     mgra_moHub_map = os.path.join(input_dir,cfg['mgra_moHub_map'])
     rate = cfg['update_rate']
 #########################################################################
@@ -111,7 +110,7 @@ def parking_costs()-> pd.DataFrame:
     parking_df.rename(columns={'total_spaces':'parking_spaces'},inplace=True)
     parking_df.index = parking_df.index.set_names('mgra')
     
-    # parking_df.to_csv("./parking_df.csv")
+    parking_df.to_csv(f"./final_parking_df_{policy_flag}_{scenario_year}.csv")
     return parking_df
 
 def process_parking_policy()-> pd.DataFrame:
@@ -134,12 +133,10 @@ def process_parking_policy()-> pd.DataFrame:
     merged_df['daily_imputed'] = np.where(merged_df['Daily'].isna(),merged_df['daily_imputed'],merged_df['Daily'])
     merged_df['monthly_imputed'] = np.where(merged_df['Monthly'].isna(),merged_df['monthly_imputed'],merged_df['Monthly'])
     
-    merged_df.to_csv(os.path.join(write_dir, 'merged_df4.csv'), index=True)
-    # merged_df[['hourly_imputed','daily_imputed','monthly_imputed']]=merged_df[['Hourly','Daily','Monthly']]
+    merged_df.to_csv(os.path.join(write_dir, 'merged_df_policy.csv'), index=True)
     merged_df.drop(columns=['Hourly','Daily','Monthly'],inplace=True)
     merged_df.set_index('mgra', inplace=True)
     merged_df.sort_index(ascending=True, inplace=True)
-    # print(merged_df['hourly_imputed'].isna().sum(),merged_df[['hourly_imputed','daily_imputed','monthly_imputed']].tail(20))
 
     return merged_df
 

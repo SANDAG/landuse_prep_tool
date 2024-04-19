@@ -30,5 +30,5 @@ model_params_paid: "parking_outputs/paid_spaces_ols_params.csv"
 implement_policy: False
 policy_type: 'pca' #possible values: 'pca' for PCA MGRAs,' mohubs' for ALL Mobility Hubs
 mgra_moHub_map: "parking_outputs/moHub_mgra_map.csv"
-parking_policy: "parking_outputs/ParkingPolicies_PCA.csv"
+parking_policy: "parking_outputs/ParkingPolicies_${scenario_year}.csv"
 update_rate: 1 #possible values: 1,1.5,0.5
