@@ -58,8 +58,8 @@ mgra_gdf = gpd.read_file(path).set_index("MGRA")[ #mgra index removed
 ]
 street_file = os.path.join(input_dir,cfg["street_file"])
 street_data = pd.read_csv(street_file).set_index("MGRA")
-param_file = os.path.join(input_dir,cfg["model_params"])
-model_params = pd.read_csv(param_file)
+model_params_free = pd.read_csv(os.path.join(input_dir,cfg["model_params_free"]))
+model_params_paid = pd.read_csv(os.path.join(input_dir,cfg["model_params_paid"]))
 max_dist = cfg["walk_dist"]
 walk_coef = cfg["walk_coef"]
 
@@ -72,16 +72,51 @@ if policy_flag:
 #########################################################################
 #Parking File Creation
 def parking_costs()-> pd.DataFrame:
-    districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
-    estimated_space_df = park_func.create_spaces_df(mgra_gdf,lu_df,street_data,model_params,imputed_parking_df,method)
-    exp_prkcosts_df = park_func.run_expected_parking_cost(max_dist,walk_coef,districts_df,mgra_gdf,imputed_parking_df,estimated_space_df)
+    acres = (mgra_gdf.geometry.area / 43560).to_frame("acres")
+    full_streetdata_df = street_data[["length", "intcount"]].join(acres).join(lu_df[["hh_sf", "hh_mf", "emp_total"]])
+    
+    global imputed_parking_df
+    #TODO remove column name in function call
+    #estimated_space_df is full street data with estimated parking spaces
+    full_streetdata_df['est_paid_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "acres", "hh_sf", "emp_total"]],model_params_paid,'est_paid_spaces')
 
-    parking_df = exp_prkcosts_df.join(districts_df['parking_type']).join(imputed_parking_df['spaces_reduction'])
-    parking_df['spaces_reduction'].fillna(0,inplace=True)
-    parking_df.rename(columns={'spaces_reduction':'parking_spaces'},inplace=True)
+    #TODO Using imputed hourly costs
+    imputed_parking_df.loc[(imputed_parking_df.hourly_imputed>0) & ((imputed_parking_df.paid_spaces<=0) | (pd.isnull(imputed_parking_df['paid_spaces']))),'paid_spaces']=full_streetdata_df['est_paid_spaces']
+    
+    districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
+    # 
+    full_streetdata_df['est_free_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "hh_sf", "hh_mf", "emp_total"]],model_params_free)
+    # full_streetdata_df.to_csv("./full_streetdata_df.csv")
+    #TODO
+    cost_df = districts_df.loc[districts_df.is_prkdistrict]
+    cost_df = cost_df.join(full_streetdata_df[["est_paid_spaces","est_free_spaces"]],how='left')
+
+    #Using imputed costs
+    imputed_names = {k + "_imputed": k for k in ["hourly", "daily", "monthly"]}
+    imputed_parking_df = imputed_parking_df.drop(columns=["hourly", "daily", "monthly"])
+    imputed_parking_df = imputed_parking_df.rename(columns=imputed_names)
+
+    cost_df = cost_df.join(imputed_parking_df[["hourly", "daily", "monthly",'paid_spaces','free_spaces']])
+
+    cost_df[['paid_spaces','free_spaces']]=cost_df[['paid_spaces','free_spaces']].fillna(0)
+    cost_df['cost_spaces']=0
+    cost_df.loc[(cost_df['parking_type']==1) & (cost_df['paid_spaces']>0),'cost_spaces'] = cost_df["paid_spaces"]
+    cost_df.loc[(cost_df['parking_type']==1) & (cost_df['paid_spaces']<=0),'cost_spaces'] = cost_df["est_paid_spaces"]
+    cost_df.loc[(cost_df['parking_type']==2) & (cost_df['free_spaces']>0),'cost_spaces'] = cost_df["free_spaces"]
+    cost_df.loc[(cost_df['parking_type']==2) & (cost_df['free_spaces']<=0),'cost_spaces'] = cost_df["est_free_spaces"]
+
+    
+    exp_prkcosts_df = park_func.run_expected_parking_cost(max_dist,walk_coef,districts_df,mgra_gdf,cost_df)
+    imputed_parking_df['total_spaces'] = imputed_parking_df[["paid_spaces", "free_spaces"]].sum(axis=1)
+    imputed_parking_df.to_csv('./imputed_df.csv')
+    #TODO spaces reduction to new spaces? Total spaces = free+paid(including estimated)
+    parking_df = exp_prkcosts_df.join(districts_df['parking_type']).join(imputed_parking_df['total_spaces'])
+    parking_df['total_spaces'].fillna(0,inplace=True)
+    parking_df.rename(columns={'total_spaces':'parking_spaces'},inplace=True)
     parking_df.index = parking_df.index.set_names('mgra')
+    # parking_df.to_csv(os.path.join(write_dir, 'parking_df_50s.csv'), index=True)
+    parking_df.to_csv("./parking_df.csv")
     return parking_df
-    # parking_df.to_csv('./parking_file.csv')
 
 def process_parking_policy()-> pd.DataFrame:
     df_policy = pd.read_csv(parking_policy)
@@ -95,11 +130,14 @@ def process_parking_policy()-> pd.DataFrame:
     merged_df['Hourly'] = merged_df['Hourly']*rate
     merged_df['Daily'] = merged_df['Daily']*rate
     merged_df['Monthly'] = merged_df['Monthly']*rate
-    
+
+    # merged_df.to_csv(os.path.join(write_dir, 'merged_df1.csv'), index=True)
+
     merged_df['hourly_imputed'] = np.where(merged_df['Hourly'].isna(),merged_df['hourly_imputed'],merged_df['Hourly'])
     merged_df['daily_imputed'] = np.where(merged_df['Daily'].isna(),merged_df['daily_imputed'],merged_df['Daily'])
     merged_df['monthly_imputed'] = np.where(merged_df['Monthly'].isna(),merged_df['monthly_imputed'],merged_df['Monthly'])
-
+    
+    merged_df.to_csv(os.path.join(write_dir, 'merged_df4.csv'), index=True)
     # merged_df[['hourly_imputed','daily_imputed','monthly_imputed']]=merged_df[['Hourly','Daily','Monthly']]
     merged_df.drop(columns=['Hourly','Daily','Monthly'],inplace=True)
     merged_df.set_index('mgra', inplace=True)
@@ -115,6 +153,7 @@ if policy_flag:
 
 parking_df = parking_costs()
 print("Parking df created")
+
 #########################################################################
 # %%
 def process_household()-> pd.DataFrame:
