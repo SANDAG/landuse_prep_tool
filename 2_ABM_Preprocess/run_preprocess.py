@@ -92,6 +92,7 @@ def parking_costs()-> pd.DataFrame:
     imputed_parking_df = imputed_parking_df.rename(columns=imputed_names)
 
     cost_df = cost_df.join(imputed_parking_df[["hourly", "daily", "monthly",'paid_spaces','free_spaces']])
+    # cost_df.to_csv('./cost_df.csv')
 
     #Updating spaces wrt parking type and existing spaces
     cost_df[['paid_spaces','free_spaces']]=cost_df[['paid_spaces','free_spaces']].fillna(0)
@@ -101,16 +102,27 @@ def parking_costs()-> pd.DataFrame:
     cost_df.loc[(cost_df['parking_type']==2) & (cost_df['free_spaces']>0),'cost_spaces'] = cost_df["free_spaces"]
     cost_df.loc[(cost_df['parking_type']==2) & (cost_df['free_spaces']<=0),'cost_spaces'] = cost_df["est_free_spaces"]
 
+    noprk_zones = districts_df.loc[
+        districts_df.is_prkdistrict & districts_df.is_noprkspace
+    ]
+    cost_df.loc[noprk_zones.index, "cost_spaces"] = 0
     
+    # cost_df.to_csv('./cost_df2_{policy_flag}_{policy_type}_{scenario_year}.csv')
+
+    # print(cost_df[(cost_df['parking_type']==2) & (cost_df['free_spaces']<=0)].shape)
+
     exp_prkcosts_df = park_func.run_expected_parking_cost(max_dist,walk_coef,districts_df,mgra_gdf,cost_df)
-    imputed_parking_df['total_spaces'] = imputed_parking_df[["paid_spaces", "free_spaces"]].sum(axis=1)
     
-    parking_df = exp_prkcosts_df.join(districts_df['parking_type']).join(imputed_parking_df['total_spaces'])
+    #Updating spaces wrt parking type and existing spaces with estimated free spaces
+    cost_df.loc[(cost_df['parking_type']==2) & (cost_df['free_spaces']<=0),'free_spaces'] = cost_df["est_free_spaces"]
+    cost_df['total_spaces'] = cost_df[["paid_spaces", "free_spaces"]].sum(axis=1)
+
+    parking_df = exp_prkcosts_df.join(districts_df['parking_type']).join(cost_df['total_spaces'])
     parking_df['total_spaces'].fillna(0,inplace=True)
     parking_df.rename(columns={'total_spaces':'parking_spaces'},inplace=True)
     parking_df.index = parking_df.index.set_names('mgra')
     
-    parking_df.to_csv(f"./final_parking_df_{policy_flag}_{scenario_year}.csv")
+    # parking_df.to_csv(f"./final_parking_df_{policy_flag}_{scenario_year}.csv")
     return parking_df
 
 def process_parking_policy()-> pd.DataFrame:
