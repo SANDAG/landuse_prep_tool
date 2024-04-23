@@ -90,9 +90,15 @@ A convex hull is formed from as the minimum shape that included all points. Howe
 #### Spatial Join
 Once the concave hull is found for each parking cluster, a simple buffer distance equal to the maximum walking distance is added to buffer around the zone to include additional walkable zones. Using the buffered concave hulls, all MGRA zones are spatially joined if they are within the concave hull envelope, forming discrete "paid parking districts".
 
+Note:<br>
+parking_type:
+- Parking Type 1: parking constrained area: has cluster_id AND district_id
+- Parking Type 2: buffer around parking constrained area which is used to include free spaces to average into parking cost calculation: has district_id but no cluster_id
+- Parking Type 3: no parking cost: Has neither cluster_id nor district_id
+    
 ### Cost Estimation
 
-- Cost_df creation with district data on is_prkdistrict filter = zone within parking district
+- Cost_df creation with district data with parking type 1 & 2 MGRAs
 - Joined with estimated paid, free spaces and imputed parking data.
 - Spaces for cost estimation or "cost_spaces" calculated with following conditions:
     - if parking_type=1 & paid_spaces>0 then paid_spaces (from 2022 parking inventory)
@@ -108,9 +114,3 @@ Once the concave hull is found for each parking cluster, a simple buffer distanc
 
 Expected parking cost = $\frac{\sum numerator_i}{\sum denominator_i}$
 
-
-Note:<br>
-parking_type:
-    1: parking constrained area: has cluster_id AND district_id
-    2: buffer around parking constrained area which is used to include free spaces to average into parking cost calculation: has district_id but no cluster_id
-    3: no parking cost: Has neither cluster_id nor district_id
