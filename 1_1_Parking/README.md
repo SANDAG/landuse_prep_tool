@@ -1,20 +1,14 @@
-# Script to preprocess the parking inventory file to prepare for Landuse Preprocess script
-This script prepares expected parking cost data for SANDAG MGRA series 15 zones. 
+# Parking Data Preparation for MGRA Land Use File (ABM3)
+These scripts prepare expected parking cost data for SANDAG MGRA series 15 zones for base and future years. 
 
 The processing includes the following steps organized into separate python modules:
-- 1_inventory_preprocess: Reduces and imputes the parking inventory file
-- 2_spaces_estimation: Creates the linear model parameters for space estimation
-- 3_costs_estimation: Estimates spaces, finds parking district, calculates expected costs
-
-# To prepare new parking costs:
-1. Run the space estimation model with 2022 Landuse file to get model parameters
-2. Run the main run_preprocess.py which will call the cost estimation for parking with new landuse and parking policy.
-
-
+- 1_inventory_preprocess: Reduces and imputes the parking inventory file (data collected in year 2022)
+- 2_spaces_estimation: Estimates linear regressions models to predict free and paid spaces
+- 3_costs_estimation: Applies regression models to estimate paid and free spaces, creates parking districts, and calculates expected costs
 
 # Steps & Analysis
 
-## 1. Reducing and Imputing raw parking inventory data
+## 1. Reduction and Imputing Raw Parking Inventory Data
 
 ### Input
     - mgra_parking_inventory.csv
@@ -26,7 +20,7 @@ The processing includes the following steps organized into separate python modul
 - Sum of public and private spaces
 - Max cost for business hours or after hours
 
-### Some assumptions
+### Assumptions
 - Collapse on-street/off-street segment
   - assuming all on-street are "public"
   - assume that off-street residential are "free" 
@@ -59,13 +53,13 @@ The processing includes the following steps organized into separate python modul
 Note: First 2 steps are static and needs to be calculated only for 2022 Landuse file for each version
 
 ## 3. Space Estimation, District Creation and Cost Estimation
-This file is called by run_preprocess.py
+This file is called by ../2_ABM_Preprocess/run_preprocess.py
 
 ### Input
     - imputed_parking_costs.csv
-    - Landuse file
+    - Landuse file (for any year)
     - MGRA 15 Shapefile
-    - Aggregated Street data
+    - Aggregated Street data (currently uses 2022 network)
     - Model parameters for free & paid spaces
     - Parking Policy (Optional)
     - Policy Type (Optional)
@@ -96,15 +90,21 @@ A convex hull is formed from as the minimum shape that included all points. Howe
 #### Spatial Join
 Once the concave hull is found for each parking cluster, a simple buffer distance equal to the maximum walking distance is added to buffer around the zone to include additional walkable zones. Using the buffered concave hulls, all MGRA zones are spatially joined if they are within the concave hull envelope, forming discrete "paid parking districts".
 
+Note:<br>
+parking_type:
+- Parking Type 1: parking constrained area: has cluster_id AND district_id
+- Parking Type 2: buffer around parking constrained area which is used to include free spaces to average into parking cost calculation: has district_id but no cluster_id
+- Parking Type 3: no parking cost: Has neither cluster_id nor district_id
+    
 ### Cost Estimation
 
-- Cost_df creation with district data on is_prkdistrict filter = zone within parking district
+- Cost_df creation with district data with parking type 1 & 2 MGRAs
 - Joined with estimated paid, free spaces and imputed parking data.
-- cost_spaces calculated with following condition:
-    - if parking_type=1 & paid_spaces>0 then paid_spaces
-    - if parking_type=1 & paid_spaces<=0 then estimated_paid_spaces
-    - if parking_type=2 & free_spaces>0 then free_spaces
-    - if parking_type=2 & free_spaces<=0 then estimated_free_spaces
+- Spaces for cost estimation or "cost_spaces" calculated with following conditions:
+    - if parking_type=1 & paid_spaces>0 then paid_spaces (from 2022 parking inventory)
+    - if parking_type=1 & paid_spaces<=0 then estimated_paid_spaces (from regression model)
+    - if parking_type=2 & free_spaces>0 then free_spaces (from 2022 parking inventory)
+    - if parking_type=2 & free_spaces<=0 then estimated_free_spaces (from regression model)
     - if is_noprkspace(zone within parking district but has no parking spaces) True then cost_spaces=0
 
 - Distance matrix is calculated for zones within parking district and distance between MGRA less than Maximum walking distance defined.
@@ -114,9 +114,3 @@ Once the concave hull is found for each parking cluster, a simple buffer distanc
 
 Expected parking cost = $\frac{\sum numerator_i}{\sum denominator_i}$
 
-
-Note:<br>
-parking_type:
-    1: parking constrained area: has cluster_id AND district_id
-    2: buffer around parking constrained area which is used to include free spaces to average into parking cost calculation: has district_id but no cluster_id
-    3: no parking cost: Has neither cluster_id nor district_id
