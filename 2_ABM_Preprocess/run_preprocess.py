@@ -135,17 +135,21 @@ def process_parking_policy()-> pd.DataFrame:
 
     mgra_parking_rates = mgra_parking_rates[['mgra','Hourly','Daily','Monthly']]
     mgra_parking_rates.dropna(subset=['Hourly'],inplace=True) #Removing all mgra where we don't provide a new parking rate
+    imputed_parking_df.reset_index(inplace=True)
+  
+    #Outer join to keep all MGRA not in inventory file
     merged_df = pd.merge(imputed_parking_df,mgra_parking_rates,on='mgra',how='outer')
 
     merged_df['Hourly'] = merged_df['Hourly']*rate
     merged_df['Daily'] = merged_df['Daily']*rate
     merged_df['Monthly'] = merged_df['Monthly']*rate
 
-    merged_df['hourly_imputed'] = np.where(merged_df['Hourly'].isna(),merged_df['hourly_imputed'],merged_df['Hourly'])
-    merged_df['daily_imputed'] = np.where(merged_df['Daily'].isna(),merged_df['daily_imputed'],merged_df['Daily'])
-    merged_df['monthly_imputed'] = np.where(merged_df['Monthly'].isna(),merged_df['monthly_imputed'],merged_df['Monthly'])
-    
-    merged_df.to_csv(os.path.join(write_dir, 'merged_df_policy.csv'), index=True)
+    merged_df['hourly_imputed'] = np.where((merged_df['Hourly'].isna()) | (merged_df['Hourly']<merged_df['hourly_imputed']),merged_df['hourly_imputed'],merged_df['Hourly'])
+    merged_df['daily_imputed'] = np.where((merged_df['Daily'].isna()) | (merged_df['Daily']<merged_df['hourly_imputed']),merged_df['daily_imputed'],merged_df['Daily'])
+    merged_df['monthly_imputed'] = np.where((merged_df['Monthly'].isna()) | (merged_df['Monthly']<merged_df['hourly_imputed']),merged_df['monthly_imputed'],merged_df['Monthly'])
+    merged_df.to_csv('./merged_df_Mohub_policy.csv', index=False)
+    # sys.exit(1)
+    # merged_df.to_csv(os.path.join(write_dir, 'merged_df_policy.csv'), index=True)
     merged_df.drop(columns=['Hourly','Daily','Monthly'],inplace=True)
     merged_df.set_index('mgra', inplace=True)
     merged_df.sort_index(ascending=True, inplace=True)
@@ -155,7 +159,7 @@ def process_parking_policy()-> pd.DataFrame:
 
 if policy_flag:
     imputed_parking_df = process_parking_policy()
-    print(imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']])
+    # print(imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']])
 
 parking_df = parking_costs()
 print("Parking df created")
