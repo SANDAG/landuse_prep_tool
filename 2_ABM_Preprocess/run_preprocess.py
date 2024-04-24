@@ -145,8 +145,8 @@ def process_parking_policy()-> pd.DataFrame:
     merged_df['Monthly'] = merged_df['Monthly']*rate
 
     merged_df['hourly_imputed'] = np.where((merged_df['Hourly'].isna()) | (merged_df['Hourly']<merged_df['hourly_imputed']),merged_df['hourly_imputed'],merged_df['Hourly'])
-    merged_df['daily_imputed'] = np.where((merged_df['Daily'].isna()) | (merged_df['Daily']<merged_df['hourly_imputed']),merged_df['daily_imputed'],merged_df['Daily'])
-    merged_df['monthly_imputed'] = np.where((merged_df['Monthly'].isna()) | (merged_df['Monthly']<merged_df['hourly_imputed']),merged_df['monthly_imputed'],merged_df['Monthly'])
+    merged_df['daily_imputed'] = np.where((merged_df['Daily'].isna()) | (merged_df['Daily']<merged_df['daily_imputed']),merged_df['daily_imputed'],merged_df['Daily'])
+    merged_df['monthly_imputed'] = np.where((merged_df['Monthly'].isna()) | (merged_df['Monthly']<merged_df['monthly_imputed']),merged_df['monthly_imputed'],merged_df['Monthly'])
     merged_df.to_csv('./merged_df_Mohub_policy.csv', index=False)
     # sys.exit(1)
     # merged_df.to_csv(os.path.join(write_dir, 'merged_df_policy.csv'), index=True)
