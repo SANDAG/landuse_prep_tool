@@ -144,6 +144,7 @@ def process_parking_policy()-> pd.DataFrame:
     merged_df['Daily'] = merged_df['Daily']*rate
     merged_df['Monthly'] = merged_df['Monthly']*rate
 
+    #Maintaining original imputed values if policy rates are NULL or less than original
     merged_df['hourly_imputed'] = np.where((merged_df['Hourly'].isna()) | (merged_df['Hourly']<merged_df['hourly_imputed']),merged_df['hourly_imputed'],merged_df['Hourly'])
     merged_df['daily_imputed'] = np.where((merged_df['Daily'].isna()) | (merged_df['Daily']<merged_df['daily_imputed']),merged_df['daily_imputed'],merged_df['Daily'])
     merged_df['monthly_imputed'] = np.where((merged_df['Monthly'].isna()) | (merged_df['Monthly']<merged_df['monthly_imputed']),merged_df['monthly_imputed'],merged_df['Monthly'])

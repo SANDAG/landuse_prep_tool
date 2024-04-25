@@ -9,7 +9,6 @@ landuse_file: mgra15_based_input_${scenario_year}.csv
 
 
 auxiliary_file: auxiliary.csv #School and AV data
-#parking_file: final_parking_data_2035_v11.csv #final_parking_data_${scenario_year}.csv
 micro_mob_file: micro_mobility.csv
 # hubs_mapping_file: mobilityHubMGRAs.csv
 microtransit_file: microtransit_2035.yaml
@@ -22,13 +21,13 @@ space_estimation_method: 'lm'
 geometry_file: "parking_inputs/mgra15.shp"
 imputed_parking_df: "parking_outputs/imputed_parking_costs.csv"
 street_file : "parking_outputs/aggregated_street_data.csv"
-model_params_free: "parking_outputs/free_spaces_ols_params.csv"
-model_params_paid: "parking_outputs/paid_spaces_ols_params.csv"
-# Delete files from input for new street data and ols parameters
+model_params_free: "parking_outputs/free_spaces_ols_params_17.csv" #_version number for EF directory
+model_params_paid: "parking_outputs/paid_spaces_ols_params_17.csv"
+# Comment files from input for new street data and ols parameters
 
 # Files for parking policies
 implement_policy: False
-policy_type: 'pca' #possible values: 'pca' for PCA MGRAs,' mohubs' for ALL Mobility Hubs
+policy_type: 'mohubs' #possible values: 'pca' for PCA MGRAs,' mohubs' for ALL Mobility Hubs
 mgra_moHub_map: "parking_outputs/moHub_mgra_map.csv"
 parking_policy: "parking_outputs/ParkingPolicies_${scenario_year}.csv"
 update_rate: 1 #possible values: 1,1.5,0.5
