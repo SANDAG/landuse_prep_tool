@@ -7,10 +7,14 @@ import statsmodels.formula.api as smf
 from tqdm import tqdm
 import yaml
 import os
-import pickle
+import sys
 
-config = './2_setting_spaces.yaml'
-# config = './settings_inventory.yaml'
+if len(sys.argv) < 2:
+    print("Config input missing - Usage: python 2_parking_spaces.py arg1")
+    sys.exit(1)
+
+config = sys.argv[1]
+
 with open(config, "r") as stream:
     try:
         settings = yaml.load(stream, Loader=yaml.FullLoader)
