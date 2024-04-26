@@ -395,9 +395,9 @@ def process_landuse()-> pd.DataFrame:
 
 
     #Mapping mobility hubs to mgra
-    mmfile = mmfile[['Mobility_Hub','Access_Time']].set_index('Mobility_Hub')
+    mmfile = mmfile[['MoHubType','Access_Time']].set_index('MoHubType')
     # mmfile['Access_Time'].fillna(0,inplace=True)  #Comment this out for removing 0 from micro access time
-    hubs_map['MicroAccessTime'] = hubs_map['MoHubName'].map(mmfile['Access_Time'])
+    hubs_map['MicroAccessTime'] = hubs_map['MoHubType'].map(mmfile['Access_Time'])
     landuse_rename_dict = {
         'zip': 'zip09',
         'majorcollegeenroll_total': 'collegeenroll',
