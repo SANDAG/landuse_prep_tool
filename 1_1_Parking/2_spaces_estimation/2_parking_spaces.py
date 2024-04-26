@@ -7,13 +7,9 @@ import statsmodels.formula.api as smf
 from tqdm import tqdm
 import yaml
 import os
-import sys
+import pickle
 
-if len(sys.argv) < 2:
-    print("Config input missing - Usage: python 2_parking_spaces.py arg1")
-    sys.exit(1)
-
-config = sys.argv[1]
+config = './2_setting_spaces.yaml'
 
 with open(config, "r") as stream:
     try:
@@ -23,8 +19,6 @@ with open(config, "r") as stream:
     except yaml.YAMLError as exc:
         print("ERRRORRR")
         print(exc)
-
-version = settings['EF_version']
 
 inputs = settings.get('inputs')        
 geometry = inputs.get("geometry")
@@ -186,8 +180,8 @@ def model_fit(street_data, parking_df, mgra_gdf, land_use):
         
 
     # Have to save the model parameters
-    prams_path1 = os.path.join(out_dir, f'free_spaces_ols_params_{version}.csv')
-    prams_path2 = os.path.join(out_dir, f'paid_spaces_ols_params_{version}.csv')
+    prams_path1 = os.path.join(out_dir, 'free_spaces_ols_params.csv')
+    prams_path2 = os.path.join(out_dir, 'paid_spaces_ols_params.csv')
 
     model_params1 = mod_lm_free.params.to_frame().reset_index()
     model_params1.columns = ['feature', 'parameter']
