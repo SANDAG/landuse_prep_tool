@@ -14,7 +14,7 @@ mgra_moHub_map: "moHub_mgra_map.csv"
 microtransit_file: microtransit_2035.yaml
 
 # Parameters
-walk_dist: 0.5 #in miles
+walk_dist: 0.25 #in miles #0.5 default
 walk_coef: -0.3
 space_estimation_method: 'lm'
 
@@ -26,7 +26,7 @@ model_params_paid: "parking_outputs/paid_spaces_ols_params.csv"
 # Comment files from input for new street data and ols parameters
 
 # Files for parking policies
-implement_policy: False
+implement_policy: True
 policy_type: 'mohubs' #possible values: 'pca' for PCA MGRAs,' mohubs' for ALL Mobility Hubs
 parking_policy: "parking_outputs/ParkingPolicies_${scenario_year}.csv"
 update_rate: 1 #possible values: 1,1.5,0.5
