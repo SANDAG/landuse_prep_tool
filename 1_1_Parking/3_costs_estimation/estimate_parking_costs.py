@@ -8,12 +8,14 @@ import yaml
 import os
 from sklearn.cluster import AgglomerativeClustering
 import alphashape
+import sys
 
 def create_districts(imputed_df, mgra_gdf, max_dist):
     # 1. Spatially cluster zones with paid parking
     paid_zones = mgra_gdf.loc[
         imputed_df[imputed_df.paid_spaces > 0].index, ["TAZ", "geometry"]
     ]
+    nofree_zones_idx = imputed_df[((imputed_df.free_spaces == 0) | (pd.isnull(imputed_df['free_spaces']))) & (imputed_df.paid_spaces <= 0)].index
     
     # Calculate similarity matrix of ever zone to zone pair on their geometries not centroid
     print("Calculating similarity matrix")
@@ -69,9 +71,11 @@ def create_districts(imputed_df, mgra_gdf, max_dist):
         parents, orient="index", columns=["district_id"]
     )
     buffer_geoms = buffer_geoms.join(district_ids).dissolve("district_id")
-
+    # buffer_geoms.to_csv("buffer_geoms.csv")
     # 3. Spatial Join all zones within hulls
     print("Performing spatial joins")
+    # Remove no free parking zones
+    mgra_gdf = mgra_gdf[~mgra_gdf.index.isin(nofree_zones_idx)]
     # Add cluster id
     parking_districts = mgra_gdf[["geometry"]].join(
         parking_clusters[["cluster_id"]]
@@ -86,7 +90,7 @@ def create_districts(imputed_df, mgra_gdf, max_dist):
     parking_districts = parking_districts.sjoin(
         buffer_geoms.geometry.reset_index(), how="left", predicate="within"
     ).drop(columns="index_right")
-
+    # parking_districts.to_csv("parking_districts.csv")
     # Determine parking_zone_type
     # is_prkdistrict    = zone within parking district
     # is_noprkspace     = zone within parking district but has no parking spaces
@@ -120,7 +124,8 @@ def create_districts(imputed_df, mgra_gdf, max_dist):
     }
 
     districts_df = output['districts'].drop(columns=['geometry'])        
-    # districts_df.to_csv(os.path.join(out_dir, 'districts.csv'))
+    # districts_df.to_csv('./districts_commented.csv')
+    # print(districts_df.loc[districts_df.is_prkdistrict].shape)
     return districts_df
 
 def estimate_spaces_df(street_data,model_params,method='lm'):
@@ -152,6 +157,8 @@ def pre_calc_dist(geos, max_dist):
     dist_df = dist_df.reset_index()
 
     dist_df = dist_df.set_index("DZONE")
+    # dist_df.to_csv("./dist_df.csv")
+    # sys.exit(1)
 
     return dist_df
 
@@ -163,9 +170,12 @@ def expected_parking_cost(dest_id,costs_df,dist_df,walk_coef,cost_type=["hourly"
             # Find all zones within walking distance
             dest_df = dist_df.loc[dest_id]
 
-            # Swap the indices and join costs to the aternative zones to be averaged
-            dest_df = dest_df.reset_index().set_index("OZONE").join(costs_df)
-
+            if isinstance(dest_df, pd.DataFrame):
+                dest_df = dest_df.reset_index().set_index("OZONE").join(costs_df)
+            else: #Handling series types
+                dest_df = dest_df.to_frame().T.reset_index().set_index("OZONE").join(costs_df)
+            # dest_df = dest_df.reset_index().set_index("OZONE").join(costs_df)
+            
             # Natural exponent -- compute once
             expo = np.exp(dest_df.dist.values * walk_coef) * dest_df.cost_spaces.values
 
