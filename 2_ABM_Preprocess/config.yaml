@@ -17,6 +17,10 @@ microtransit_file: microtransit_2035.yaml
 walk_dist: 0.25 #in miles #0.5 default
 walk_coef: -0.3
 space_estimation_method: 'lm'
+space_estimation_method: 'lm'
+max_est_paid_spaces: 3000
+max_est_free_spaces: 1000
+min_random_value: 0.5
 
 geometry_file: "parking_inputs/mgra15.shp"
 imputed_parking_df: "parking_outputs/imputed_parking_costs.csv"

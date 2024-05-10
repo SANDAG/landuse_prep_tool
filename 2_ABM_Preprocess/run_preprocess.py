@@ -5,6 +5,7 @@ import pandas as pd
 import geopandas as gpd
 import sys
 import yaml
+import random
 
 lu_lib = os.path.dirname(os.path.dirname(__file__))
 lu_lib = os.path.join(lu_lib, "1_1_Parking/3_costs_estimation")
@@ -60,6 +61,7 @@ walk_coef = cfg["walk_coef"]
 
 #Parking Policy
 policy_flag = cfg['implement_policy']
+policy_type = ''
 if policy_flag:
     policy_type = cfg['policy_type']
     print(f"Applying parking policy to {policy_type} MGRAs")
@@ -73,19 +75,58 @@ def parking_costs()-> pd.DataFrame:
     full_streetdata_df = street_data[["length", "intcount"]].join(acres).join(lu_df[["hh_sf", "hh_mf", "emp_total"]])
     
     global imputed_parking_df
-    full_streetdata_df['est_paid_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "acres", "hh_sf", "emp_total"]],model_params_paid)
 
-    #replacing empty paid spaces with estimated values
-    imputed_parking_df.loc[(imputed_parking_df.hourly_imputed>0) & ((imputed_parking_df.paid_spaces<=0) | (pd.isnull(imputed_parking_df['paid_spaces']))),'paid_spaces']=full_streetdata_df['est_paid_spaces']
+    #Fullstreet data used to estimate paid and free spaces
+    ############################################
+    #Estimate paid spaces
+    full_streetdata_df['est_paid_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "acres", "hh_sf", "emp_total"]],model_params_paid)
+    if policy_type=='mohubs':
+        #Limit the estimated paid spaces with max_est_paid_spaces in config
+        full_streetdata_df.loc[full_streetdata_df.est_paid_spaces>cfg['max_est_paid_spaces'],'est_paid_spaces']=cfg['max_est_paid_spaces']
+
+        #Adding random_value_id_paid with random values between 0 and 1
+        #Make all the values less than min_random_value as 0 for estimated paid spaces(excluding these MGRAs from create_districts function)
+        min_val = cfg['min_random_value']
+        np.random.seed(42)
+        full_streetdata_df['random_value_id_paid'] = np.random.random(len(full_streetdata_df))
+        full_streetdata_df.loc[full_streetdata_df.random_value_id_paid<=min_val,'est_paid_spaces']=0
+
+        #Estimate free spaces
+        full_streetdata_df['est_free_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "hh_sf", "hh_mf", "emp_total"]],model_params_free)
+        #Limit the estimated free spaces with max_est_free_spaces in config
+        full_streetdata_df.loc[full_streetdata_df.est_free_spaces>cfg['max_est_free_spaces'],'est_free_spaces']=cfg['max_est_free_spaces']
+
+        #Adding random_value_id_free with random values between 0 and 1
+        #Make all the values less than min_random_value as 0 for estimated free spaces
+        min_val = cfg['min_random_value']
+        np.random.seed(41)
+        full_streetdata_df['random_value_id_free'] = np.random.random(len(full_streetdata_df))
+        full_streetdata_df.loc[full_streetdata_df.random_value_id_free<=min_val,'est_free_spaces']=0
+
+        #replacing empty paid spaces in imputed df with estimated values where costs are available
+        imputed_parking_df.loc[(imputed_parking_df.hourly_imputed>0) & ((imputed_parking_df.paid_spaces<=0) | (pd.isnull(imputed_parking_df['paid_spaces']))),'paid_spaces']=full_streetdata_df['est_paid_spaces']
     
-    #Creating Districts with updated imputed_parking_df
-    districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
+        #replacing empty free spaces with estimated values
+        imputed_parking_df.loc[(imputed_parking_df.free_spaces<=0) | (pd.isnull(imputed_parking_df['free_spaces'])),'free_spaces']=full_streetdata_df['est_free_spaces']
+        
+        #Creating Districts with updated imputed_parking_df
+        districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
+    #####################################
+    else:
+        #replacing empty paid spaces in imputed df with estimated values where costs are available
+        imputed_parking_df.loc[(imputed_parking_df.hourly_imputed>0) & ((imputed_parking_df.paid_spaces<=0) | (pd.isnull(imputed_parking_df['paid_spaces']))),'paid_spaces']=full_streetdata_df['est_paid_spaces']
+        
+        #Creating Districts with updated imputed_parking_df
+        districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
+        full_streetdata_df['est_free_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "hh_sf", "hh_mf", "emp_total"]],model_params_free)    
+    # districts_df.to_csv(os.path.join('./districts.csv'))
     
-    full_streetdata_df['est_free_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "hh_sf", "hh_mf", "emp_total"]],model_params_free)
+    #####################################
 
     cost_df = districts_df.loc[districts_df.is_prkdistrict]
     cost_df = cost_df.join(full_streetdata_df[["est_paid_spaces","est_free_spaces"]],how='left')
-
+    # print(districts_df.index.duplicated().sum())
+    # print(full_streetdata_df.index.duplicated().sum())
     #Using imputed costs
     imputed_names = {k + "_imputed": k for k in ["hourly", "daily", "monthly"]}
     imputed_parking_df = imputed_parking_df.drop(columns=["hourly", "daily", "monthly"])
@@ -97,6 +138,8 @@ def parking_costs()-> pd.DataFrame:
     #Updating spaces wrt parking type and existing spaces
     cost_df[['paid_spaces','free_spaces']]=cost_df[['paid_spaces','free_spaces']].fillna(0)
     cost_df['cost_spaces']=0
+    cost_df = cost_df[~cost_df.index.duplicated()]
+
     cost_df.loc[(cost_df['parking_type']==1) & (cost_df['paid_spaces']>0),'cost_spaces'] = cost_df["paid_spaces"]
     cost_df.loc[(cost_df['parking_type']==1) & (cost_df['paid_spaces']<=0),'cost_spaces'] = cost_df["est_paid_spaces"]
     cost_df.loc[(cost_df['parking_type']==2) & (cost_df['free_spaces']>0),'cost_spaces'] = cost_df["free_spaces"]
@@ -106,10 +149,6 @@ def parking_costs()-> pd.DataFrame:
         districts_df.is_prkdistrict & districts_df.is_noprkspace
     ]
     cost_df.loc[noprk_zones.index, "cost_spaces"] = 0
-    
-    # cost_df.to_csv('./cost_df2_{policy_flag}_{policy_type}_{scenario_year}.csv')
-
-    # print(cost_df[(cost_df['parking_type']==2) & (cost_df['free_spaces']<=0)].shape)
 
     exp_prkcosts_df = park_func.run_expected_parking_cost(max_dist,walk_coef,districts_df,mgra_gdf,cost_df)
     
