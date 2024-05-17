@@ -6,6 +6,7 @@ import geopandas as gpd
 import sys
 import yaml
 import random
+from sqlalchemy import create_engine
 
 lu_lib = os.path.dirname(os.path.dirname(__file__))
 lu_lib = os.path.join(lu_lib, "1_1_Parking/3_costs_estimation")
@@ -27,6 +28,15 @@ input_dir = cfg['input_dir']
 scenario_year = cfg['scenario_year']
 write_dir = cfg['output_dir']
 EF_dir = cfg['EF_dir']
+server = cfg['server']
+database = cfg['database']
+connection_string = f'mssql+pyodbc://{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes'
+
+engine = create_engine(connection_string)
+
+xref_df = pd.read_sql('SELECT * FROM sde.MGRA15_RP2025_ABM3_XREF', engine)
+xref_df = xref_df.rename(columns={'MGRA':'mgra'})
+# print(xref_df.columns)
 
 # %%
 households_file = os.path.join(EF_dir,cfg['households_file'].replace('${scenario_year}', str(scenario_year)))
@@ -34,7 +44,6 @@ persons_file = os.path.join(EF_dir,cfg['persons_file'].replace('${scenario_year}
 landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
 
 micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
-# hub_mgra_map_file = os.path.join(input_dir,cfg['hubs_mapping_file'])
 mgra_moHub_map = os.path.join(input_dir,cfg['mgra_moHub_map'])
 
 auxiliary_file = os.path.join(input_dir,cfg['auxiliary_file']) #2019 school, remoteAVParking	refueling_stations
@@ -66,7 +75,6 @@ if policy_flag:
     policy_type = cfg['policy_type']
     print(f"Applying parking policy to {policy_type} MGRAs")
     parking_policy = os.path.join(input_dir,cfg['parking_policy'].replace('${scenario_year}', str(scenario_year)))
-    mgra_moHub_map = os.path.join(input_dir,cfg['mgra_moHub_map'])
     rate = cfg['update_rate']
 #########################################################################
 #Parking File Creation
@@ -166,11 +174,11 @@ def parking_costs()-> pd.DataFrame:
 
 def process_parking_policy()-> pd.DataFrame:
     df_policy = pd.read_csv(parking_policy)
-    df_mohub = pd.read_csv(mgra_moHub_map)
-    mgra_parking_rates = pd.merge(df_mohub,df_policy,on='MoHubType',how='left')
+    global xref_df
+    mgra_parking_rates = pd.merge(xref_df,df_policy,on='MoHubType',how='left')
 
     if policy_type == 'pca':
-        mgra_parking_rates.loc[mgra_parking_rates['PARKCOV_ID'].isnull(),['Hourly','Daily','Monthly']] = None
+        mgra_parking_rates.loc[mgra_parking_rates['PCAID'].isnull(),['Hourly','Daily','Monthly']] = None
 
     mgra_parking_rates = mgra_parking_rates[['mgra','Hourly','Daily','Monthly']]
     mgra_parking_rates.dropna(subset=['Hourly'],inplace=True) #Removing all mgra where we don't provide a new parking rate
@@ -427,16 +435,13 @@ def process_landuse()-> pd.DataFrame:
     '''
     print('Working on Landuse file')
     df_mgra = pd.read_csv(landuse_file)
-    # df_parking = pd.read_csv(parking_file)
     mmfile = pd.read_csv(micro_mobility_file)
-    hubs_map = pd.read_csv(mgra_moHub_map)
     df_auxiliary = pd.read_csv(auxiliary_file)
 
 
     #Mapping mobility hubs to mgra
     mmfile = mmfile[['MoHubType','Access_Time']].set_index('MoHubType')
-    # mmfile['Access_Time'].fillna(0,inplace=True)  #Comment this out for removing 0 from micro access time
-    hubs_map['MicroAccessTime'] = hubs_map['MoHubType'].map(mmfile['Access_Time'])
+    xref_df['MicroAccessTime'] = xref_df['MoHubType'].map(mmfile['Access_Time'])
     landuse_rename_dict = {
         'zip': 'zip09',
         'majorcollegeenroll_total': 'collegeenroll',
@@ -449,7 +454,7 @@ def process_landuse()-> pd.DataFrame:
 
     merged_df = pd.merge(df_mgra, parking_df, on='mgra', how='left')
     merged_df = pd.merge(merged_df, df_auxiliary, on='mgra', how='left') #School df can be added
-    merged_df = pd.merge(merged_df,hubs_map[['mgra','MicroAccessTime']], how='left')
+    merged_df = pd.merge(merged_df,xref_df[['mgra','MicroAccessTime']],on='mgra',how='left')
     # merged_df = merged_df.drop('MGRA', axis=1)
     merged_df['MicroAccessTime'].fillna(999,inplace=True)
     merged_df['MicroAccessTime']= merged_df['MicroAccessTime'].astype(int)
