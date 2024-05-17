@@ -11,10 +11,9 @@ landuse_file: mgra15_based_input_${scenario_year}.csv
 auxiliary_file: auxiliary.csv #School and AV data
 micro_mob_file: micro_mobility.csv
 mgra_moHub_map: "moHub_mgra_map.csv"
-microtransit_file: microtransit_2035.yaml
 
 # Parameters
-walk_dist: 0.25 #in miles #0.5 default
+walk_dist: 0.5 #in miles #0.5 default
 walk_coef: -0.3
 space_estimation_method: 'lm'
 space_estimation_method: 'lm'
@@ -36,5 +35,5 @@ parking_policy: "parking_outputs/ParkingPolicies_${scenario_year}.csv"
 update_rate: 1 #possible values: 1,1.5,0.5
 
 #SQL Server Connection
-server = 'DGISWSQL22'
-database = 'RP2025'
+server : 'DGISWSQL22'
+database : 'RP2025'

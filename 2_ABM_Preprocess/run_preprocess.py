@@ -28,10 +28,11 @@ input_dir = cfg['input_dir']
 scenario_year = cfg['scenario_year']
 write_dir = cfg['output_dir']
 EF_dir = cfg['EF_dir']
+
+#Reading from SQL SERVER
 server = cfg['server']
 database = cfg['database']
 connection_string = f'mssql+pyodbc://{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes'
-
 engine = create_engine(connection_string)
 
 xref_df = pd.read_sql('SELECT * FROM sde.MGRA15_RP2025_ABM3_XREF', engine)
@@ -44,17 +45,10 @@ persons_file = os.path.join(EF_dir,cfg['persons_file'].replace('${scenario_year}
 landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
 
 micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
-mgra_moHub_map = os.path.join(input_dir,cfg['mgra_moHub_map'])
 
 auxiliary_file = os.path.join(input_dir,cfg['auxiliary_file']) #2019 school, remoteAVParking	refueling_stations
 
-with open(os.path.join(input_dir,cfg['microtransit_file']), "r") as f:
-    microtransit = yaml.safe_load(f)
-    f.close()  #MicroTransit changes 
 
-#########################################################################
-# out_dir = settings.get("output_dir")
-# inputs = settings.get('inputs')
 method = cfg["space_estimation_method"]
 imputed_parking_df = pd.read_csv(os.path.join(input_dir,cfg["imputed_parking_df"])).set_index('mgra')
 lu_df = pd.read_csv(landuse_file).set_index("mgra")
@@ -459,15 +453,20 @@ def process_landuse()-> pd.DataFrame:
     merged_df['MicroAccessTime'].fillna(999,inplace=True)
     merged_df['MicroAccessTime']= merged_df['MicroAccessTime'].astype(int)
 
-    merged_df["microtransit"] = np.zeros(len(merged_df), int)
-    merged_df["nev"] = np.zeros(len(merged_df), int)
-    for service, info in microtransit['services'].items():
-        for mgra_serviced in info['mgras_serviced']:
-            # Find the row in the DataFrame where mgra matches
-            match_row = merged_df[merged_df['mgra'] == mgra_serviced]
-            if not match_row.empty:
-                merged_df.loc[match_row.index, info['type']] = info['id']
+    #NEW XREF Code
+    xref_df['microtransit'] = xref_df['MTID'].str.extract('(\d+)').fillna(0).astype(int)
+    xref_df['nev'] = xref_df['NEVID'].str.extract('(\d+)').fillna(0).astype(int)
 
+    phased_mm_df = xref_df[
+        (xref_df['MTYear'] <= scenario_year)
+    ]
+    phased_nev_df =  xref_df[
+        (xref_df['NEVYear'] <= scenario_year)
+    ]
+
+    merged_df = pd.merge(merged_df, phased_mm_df[['mgra','microtransit']], on='mgra', how='left')
+    merged_df = pd.merge(merged_df, phased_nev_df[['mgra','nev']], on='mgra', how='left')
+    merged_df[['microtransit','nev']] = merged_df[['microtransit','nev']].fillna(0)
     return merged_df.sort_values(by='mgra')
 
 # %%
