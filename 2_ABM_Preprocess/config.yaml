@@ -34,3 +34,7 @@ implement_policy: True
 policy_type: 'mohubs' #possible values: 'pca' for PCA MGRAs,' mohubs' for ALL Mobility Hubs
 parking_policy: "parking_outputs/ParkingPolicies_${scenario_year}.csv"
 update_rate: 1 #possible values: 1,1.5,0.5
+
+#SQL Server Connection
+server = 'DGISWSQL22'
+database = 'RP2025'
