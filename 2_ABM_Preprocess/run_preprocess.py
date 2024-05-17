@@ -189,7 +189,7 @@ def process_parking_policy()-> pd.DataFrame:
     merged_df['hourly_imputed'] = np.where((merged_df['Hourly'].isna()) | (merged_df['Hourly']<merged_df['hourly_imputed']),merged_df['hourly_imputed'],merged_df['Hourly'])
     merged_df['daily_imputed'] = np.where((merged_df['Daily'].isna()) | (merged_df['Daily']<merged_df['daily_imputed']),merged_df['daily_imputed'],merged_df['Daily'])
     merged_df['monthly_imputed'] = np.where((merged_df['Monthly'].isna()) | (merged_df['Monthly']<merged_df['monthly_imputed']),merged_df['monthly_imputed'],merged_df['Monthly'])
-    merged_df.to_csv('./merged_df_Mohub_policy.csv', index=False)
+    # merged_df.to_csv('./merged_df_Mohub_policy.csv', index=False)
     # sys.exit(1)
     # merged_df.to_csv(os.path.join(write_dir, 'merged_df_policy.csv'), index=True)
     merged_df.drop(columns=['Hourly','Daily','Monthly'],inplace=True)
@@ -463,6 +463,15 @@ def process_landuse()-> pd.DataFrame:
     phased_nev_df =  xref_df[
         (xref_df['NEVYear'] <= scenario_year)
     ]
+
+    if scenario_year < 2025:
+        phased_mm_df = pd.DataFrame({
+            "microtransit": [0] * 5
+        })
+        phased_mm_df['mgra'] = [i % 5 + 1 for i in range(5)]
+        phased_nev_df =  xref_df[
+            (xref_df['NEVID'] == 'FF14') | (xref_df['NEVID'] == 'FF10')
+        ]
 
     merged_df = pd.merge(merged_df, phased_mm_df[['mgra','microtransit']], on='mgra', how='left')
     merged_df = pd.merge(merged_df, phased_nev_df[['mgra','nev']], on='mgra', how='left')
