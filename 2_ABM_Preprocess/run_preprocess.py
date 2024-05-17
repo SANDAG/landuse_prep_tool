@@ -80,7 +80,7 @@ def parking_costs()-> pd.DataFrame:
     ############################################
     #Estimate paid spaces
     full_streetdata_df['est_paid_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "acres", "hh_sf", "emp_total"]],model_params_paid)
-    if policy_type=='mohubs':
+    if policy_type=='mohubs' and policy_flag:
         #Limit the estimated paid spaces with max_est_paid_spaces in config
         full_streetdata_df.loc[full_streetdata_df.est_paid_spaces>cfg['max_est_paid_spaces'],'est_paid_spaces']=cfg['max_est_paid_spaces']
 
