@@ -74,7 +74,7 @@ if policy_flag:
 #Parking File Creation
 def parking_costs()-> pd.DataFrame:
     acres = (mgra_gdf.geometry.area / 43560).to_frame("acres")
-    full_streetdata_df = street_data[["length", "intcount"]].join(acres).join(lu_df[["hh_sf", "hh_mf", "emp_total"]])
+    full_streetdata_df = street_data[["length", "intcount"]].join(acres).join(lu_df[["hh_sf", "hh_mf", "emp_total","emp_ret","emp_food"]])
     
     global imputed_parking_df
 
@@ -88,10 +88,10 @@ def parking_costs()-> pd.DataFrame:
 
         #Adding random_value_id_paid with random values between 0 and 1
         #Make all the values less than min_random_value as 0 for estimated paid spaces(excluding these MGRAs from create_districts function)
-        min_val = cfg['min_random_value']
-        np.random.seed(42)
-        full_streetdata_df['random_value_id_paid'] = np.random.random(len(full_streetdata_df))
-        full_streetdata_df.loc[full_streetdata_df.random_value_id_paid<=min_val,'est_paid_spaces']=0
+        # min_val = cfg['min_random_value']
+        # np.random.seed(42)
+        # full_streetdata_df['random_value_id_paid'] = np.random.random(len(full_streetdata_df))
+        # full_streetdata_df.loc[full_streetdata_df.random_value_id_paid<=min_val,'est_paid_spaces']=0
 
         #Estimate free spaces
         full_streetdata_df['est_free_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "hh_sf", "hh_mf", "emp_total"]],model_params_free)
@@ -100,16 +100,23 @@ def parking_costs()-> pd.DataFrame:
 
         #Adding random_value_id_free with random values between 0 and 1
         #Make all the values less than min_random_value as 0 for estimated free spaces
-        min_val = cfg['min_random_value']
-        np.random.seed(41)
-        full_streetdata_df['random_value_id_free'] = np.random.random(len(full_streetdata_df))
-        full_streetdata_df.loc[full_streetdata_df.random_value_id_free<=min_val,'est_free_spaces']=0
+        # min_val = cfg['min_random_value']
+        # np.random.seed(41)
+        # full_streetdata_df['random_value_id_free'] = np.random.random(len(full_streetdata_df))
+        # full_streetdata_df.loc[full_streetdata_df.random_value_id_free<=min_val,'est_free_spaces']=0
 
         #replacing empty paid spaces in imputed df with estimated values where costs are available
         imputed_parking_df.loc[(imputed_parking_df.hourly_imputed>0) & ((imputed_parking_df.paid_spaces<=0) | (pd.isnull(imputed_parking_df['paid_spaces']))),'paid_spaces']=full_streetdata_df['est_paid_spaces']
     
         #replacing empty free spaces with estimated values
         imputed_parking_df.loc[(imputed_parking_df.free_spaces<=0) | (pd.isnull(imputed_parking_df['free_spaces'])),'free_spaces']=full_streetdata_df['est_free_spaces']
+
+        #Keeping only MGRA with Employment in Retail and food
+        emp_idx = full_streetdata_df[(full_streetdata_df["emp_ret"]>0) | (full_streetdata_df["emp_food"]>0)].index
+        valid_indices = [index for index in emp_idx if index in imputed_parking_df.index]
+        imputed_parking_df = imputed_parking_df.loc[valid_indices]
+        print(imputed_parking_df.shape,len(emp_idx),len(valid_indices))
+        # sys.exit(0)
         
         #Creating Districts with updated imputed_parking_df
         districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
