@@ -186,4 +186,5 @@ if __name__ == "__main__":
     imputed_parking_df = label_imputations(imputed_parking_df, reduced_parking_df)
     imputed_parking_df['total_spaces'] = imputed_parking_df['paid_spaces'] + imputed_parking_df['free_spaces']
     imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']] = imputed_parking_df[['hourly_imputed','daily_imputed','monthly_imputed']].round(3)
+    imputed_parking_df.loc[ imputed_parking_df['paid_spaces']<=0,['hourly_imputed','daily_imputed','monthly_imputed']]=0
     write_output(imputed_parking_df)
