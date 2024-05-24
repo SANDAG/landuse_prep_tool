@@ -28,6 +28,7 @@ input_dir = cfg['input_dir']
 scenario_year = cfg['scenario_year']
 write_dir = cfg['output_dir']
 EF_dir = cfg['EF_dir']
+ff_effective_year = cfg.get('ff_year', scenario_year)
 
 #Reading from SQL SERVER
 server = cfg['server']
@@ -465,13 +466,14 @@ def process_landuse()-> pd.DataFrame:
 
     #Checking phase years for MT implementation
     phased_mm_df = xref_df[
-        (xref_df['MTYear'] <= scenario_year)
+        (xref_df['MTYear'] <= ff_effective_year)
     ]
     phased_nev_df =  xref_df[
-        (xref_df['NEVYear'] <= scenario_year)
+        (xref_df['NEVYear'] <= ff_effective_year)
     ]
 
-    if scenario_year < 2025:
+    #Adding condition for No Build case - MT = Not available and NEV = Downtown and Oceanside
+    if ff_effective_year < 2025 :
         phased_mm_df = pd.DataFrame({
             "microtransit": [0] * 5
         })
