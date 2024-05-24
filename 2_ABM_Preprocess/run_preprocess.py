@@ -70,13 +70,17 @@ if policy_flag:
     print(f"Applying parking policy to {policy_type} MGRAs")
     parking_policy = os.path.join(input_dir,cfg['parking_policy'].replace('${scenario_year}', str(scenario_year)))
     rate = cfg['update_rate']
+    #Finding index to update Mohubs Parking policy
+    valid_hourly_costs_idx = imputed_parking_df[imputed_parking_df['hourly_imputed'].notnull() & (imputed_parking_df['hourly_imputed'] > 0)].index
+    imputed_parking_df.to_csv('imputed_parking_df1.csv')
 #########################################################################
 #Parking File Creation
 def parking_costs()-> pd.DataFrame:
     acres = (mgra_gdf.geometry.area / 43560).to_frame("acres")
-    full_streetdata_df = street_data[["length", "intcount"]].join(acres).join(lu_df[["hh_sf", "hh_mf", "emp_total","emp_ret","emp_food"]])
+    full_streetdata_df = street_data[["length", "intcount"]].join(acres).join(lu_df[["hh_sf", "hh_mf", "emp_total","emp_ret","emp_food","emp_hlth"]])
     
     global imputed_parking_df
+    global valid_hourly_costs_idx
 
     #Fullstreet data used to estimate paid and free spaces
     ############################################
@@ -86,24 +90,10 @@ def parking_costs()-> pd.DataFrame:
         #Limit the estimated paid spaces with max_est_paid_spaces in config
         full_streetdata_df.loc[full_streetdata_df.est_paid_spaces>cfg['max_est_paid_spaces'],'est_paid_spaces']=cfg['max_est_paid_spaces']
 
-        #Adding random_value_id_paid with random values between 0 and 1
-        #Make all the values less than min_random_value as 0 for estimated paid spaces(excluding these MGRAs from create_districts function)
-        # min_val = cfg['min_random_value']
-        # np.random.seed(42)
-        # full_streetdata_df['random_value_id_paid'] = np.random.random(len(full_streetdata_df))
-        # full_streetdata_df.loc[full_streetdata_df.random_value_id_paid<=min_val,'est_paid_spaces']=0
-
         #Estimate free spaces
         full_streetdata_df['est_free_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "hh_sf", "hh_mf", "emp_total"]],model_params_free)
         #Limit the estimated free spaces with max_est_free_spaces in config
         full_streetdata_df.loc[full_streetdata_df.est_free_spaces>cfg['max_est_free_spaces'],'est_free_spaces']=cfg['max_est_free_spaces']
-
-        #Adding random_value_id_free with random values between 0 and 1
-        #Make all the values less than min_random_value as 0 for estimated free spaces
-        # min_val = cfg['min_random_value']
-        # np.random.seed(41)
-        # full_streetdata_df['random_value_id_free'] = np.random.random(len(full_streetdata_df))
-        # full_streetdata_df.loc[full_streetdata_df.random_value_id_free<=min_val,'est_free_spaces']=0
 
         #replacing empty paid spaces in imputed df with estimated values where costs are available
         imputed_parking_df.loc[(imputed_parking_df.hourly_imputed>0) & ((imputed_parking_df.paid_spaces<=0) | (pd.isnull(imputed_parking_df['paid_spaces']))),'paid_spaces']=full_streetdata_df['est_paid_spaces']
@@ -111,32 +101,36 @@ def parking_costs()-> pd.DataFrame:
         #replacing empty free spaces with estimated values
         imputed_parking_df.loc[(imputed_parking_df.free_spaces<=0) | (pd.isnull(imputed_parking_df['free_spaces'])),'free_spaces']=full_streetdata_df['est_free_spaces']
 
-        #Keeping only MGRA with Employment in Retail and food
-        emp_idx = full_streetdata_df[(full_streetdata_df["emp_ret"]>0) | (full_streetdata_df["emp_food"]>0)].index
+        #Keeping only MGRA with Employment in Health, Retail and food
+        full_streetdata_df['emp_ret_food_hlth'] = full_streetdata_df['emp_ret'] + full_streetdata_df['emp_food'] + full_streetdata_df['emp_hlth']
+        emp_idx = full_streetdata_df[full_streetdata_df['emp_ret_food_hlth']>=30].index
         valid_indices = [index for index in emp_idx if index in imputed_parking_df.index]
-        imputed_parking_df = imputed_parking_df.loc[valid_indices]
-        print(imputed_parking_df.shape,len(emp_idx),len(valid_indices))
-        # sys.exit(0)
+
+        #Union of indices from employee and inventory hourly costs
+        union_indices = set(valid_indices).union(set(valid_hourly_costs_idx))
+        imputed_parking_df.to_csv('imputed_parking_df2.csv')
+        # Filter imputed_parking_df using the union of indices
+        imputed_parking_df = imputed_parking_df.loc[list(union_indices)]
         
         #Creating Districts with updated imputed_parking_df
         districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
     #####################################
     else:
         #replacing empty paid spaces in imputed df with estimated values where costs are available
-        imputed_parking_df.loc[(imputed_parking_df.hourly_imputed>0) & ((imputed_parking_df.paid_spaces<=0) | (pd.isnull(imputed_parking_df['paid_spaces']))),'paid_spaces']=full_streetdata_df['est_paid_spaces']
+        condition = (imputed_parking_df.hourly_imputed>0) & ((imputed_parking_df.paid_spaces<=0) | (pd.isnull(imputed_parking_df['paid_spaces'])))
+        full_streetdata_df.rename_axis("mgra", inplace=True)
+        aligned_est_paid_spaces = full_streetdata_df.reindex(imputed_parking_df.index)
+        imputed_parking_df.loc[condition,'paid_spaces']=aligned_est_paid_spaces['est_paid_spaces']
         
         #Creating Districts with updated imputed_parking_df
         districts_df = park_func.create_districts(imputed_parking_df,mgra_gdf,max_dist)
         full_streetdata_df['est_free_spaces'] = park_func.estimate_spaces_df(full_streetdata_df[["length", "intcount", "hh_sf", "hh_mf", "emp_total"]],model_params_free)    
-    # districts_df.to_csv(os.path.join('./districts.csv'))
+        # districts_df.to_csv(os.path.join('./districts.csv'))
     
     #####################################
 
     cost_df = districts_df.loc[districts_df.is_prkdistrict]
     cost_df = cost_df.join(full_streetdata_df[["est_paid_spaces","est_free_spaces"]],how='left')
-    # print(districts_df.index.duplicated().sum())
-    # print(full_streetdata_df.index.duplicated().sum())
-    #Using imputed costs
     imputed_names = {k + "_imputed": k for k in ["hourly", "daily", "monthly"]}
     imputed_parking_df = imputed_parking_df.drop(columns=["hourly", "daily", "monthly"])
     imputed_parking_df = imputed_parking_df.rename(columns=imputed_names)
@@ -196,7 +190,7 @@ def process_parking_policy()-> pd.DataFrame:
     merged_df['hourly_imputed'] = np.where((merged_df['Hourly'].isna()) | (merged_df['Hourly']<merged_df['hourly_imputed']),merged_df['hourly_imputed'],merged_df['Hourly'])
     merged_df['daily_imputed'] = np.where((merged_df['Daily'].isna()) | (merged_df['Daily']<merged_df['daily_imputed']),merged_df['daily_imputed'],merged_df['Daily'])
     merged_df['monthly_imputed'] = np.where((merged_df['Monthly'].isna()) | (merged_df['Monthly']<merged_df['monthly_imputed']),merged_df['monthly_imputed'],merged_df['Monthly'])
-    # merged_df.to_csv('./merged_df_Mohub_policy.csv', index=False)
+    # merged_df.to_csv('./merged_df_pca_policy.csv', index=False)
     # sys.exit(1)
     # merged_df.to_csv(os.path.join(write_dir, 'merged_df_policy.csv'), index=True)
     merged_df.drop(columns=['Hourly','Daily','Monthly'],inplace=True)
@@ -455,15 +449,21 @@ def process_landuse()-> pd.DataFrame:
 
     merged_df = pd.merge(df_mgra, parking_df, on='mgra', how='left')
     merged_df = pd.merge(merged_df, df_auxiliary, on='mgra', how='left') #School df can be added
-    merged_df = pd.merge(merged_df,xref_df[['mgra','MicroAccessTime']],on='mgra',how='left')
+    merged_df = pd.merge(merged_df,xref_df[['mgra','MicroAccessTime','MoHubName']],on='mgra',how='left')
     # merged_df = merged_df.drop('MGRA', axis=1)
-    merged_df['MicroAccessTime'].fillna(999,inplace=True)
+    merged_df[['MicroAccessTime','MoHubName']] = merged_df[['MicroAccessTime','MoHubName']].fillna(999)
     merged_df['MicroAccessTime']= merged_df['MicroAccessTime'].astype(int)
+
+    #Set Micro Access Time to 999 if not in SD for years before 2035
+    Mohubs_SD = ['West Bernardo', 'College Area', 'Southeast San Diego', 'La Jolla', 'University Community', 'Kearny Mesa', 'Sorrento Valley', 'Mira Mesa', 'US-Mexico Border', 'Ocean Beach', 'Pacific Beach', 'Carmel Valley', 'Urban Core', 'Mission Valley', 'Linda Vista/Serra Mesa', 'Encanto']
+    if scenario_year < 2035:
+        merged_df.loc[~merged_df['MoHubName'].isin(Mohubs_SD), 'MicroAccessTime'] = 999
 
     #NEW XREF Code
     xref_df['microtransit'] = xref_df['MTID'].str.extract('(\d+)').fillna(0).astype(int)
     xref_df['nev'] = xref_df['NEVID'].str.extract('(\d+)').fillna(0).astype(int)
 
+    #Checking phase years for MT implementation
     phased_mm_df = xref_df[
         (xref_df['MTYear'] <= scenario_year)
     ]
