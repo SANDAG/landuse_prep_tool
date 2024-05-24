@@ -472,7 +472,7 @@ def process_landuse()-> pd.DataFrame:
         (xref_df['NEVYear'] <= ff_effective_year)
     ]
 
-    #Adding condition for No Build case - MT = Not available and NEV = Downtown and Oceanside
+    #Adding condition for No Build case - MT = Not available and NEV = Downtown Fred
     if ff_effective_year < 2025 :
         phased_mm_df = pd.DataFrame({
             "microtransit": [0] * 5
