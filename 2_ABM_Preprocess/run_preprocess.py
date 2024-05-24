@@ -472,14 +472,14 @@ def process_landuse()-> pd.DataFrame:
         (xref_df['NEVYear'] <= ff_effective_year)
     ]
 
-    #Adding condition for No Build case - MT = Not available and NEV = Downtown Fred
+    #Adding condition for No Build case - MT = Not available and NEV = Downtown and Oceanside
     if ff_effective_year < 2025 :
         phased_mm_df = pd.DataFrame({
             "microtransit": [0] * 5
         })
         phased_mm_df['mgra'] = [i % 5 + 1 for i in range(5)]
         phased_nev_df =  xref_df[
-            (xref_df['NEVID'] == 'FF14')
+            (xref_df['NEVID'] == 'FF14') | (xref_df['NEVID'] == 'FF10')
         ]
 
     merged_df = pd.merge(merged_df, phased_mm_df[['mgra','microtransit']], on='mgra', how='left')
