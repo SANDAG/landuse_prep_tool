@@ -479,7 +479,7 @@ def process_landuse()-> pd.DataFrame:
         })
         phased_mm_df['mgra'] = [i % 5 + 1 for i in range(5)]
         phased_nev_df =  xref_df[
-            (xref_df['NEVID'] == 'FF14') | (xref_df['NEVID'] == 'FF10')
+            (xref_df['NEVID'] == 'FF14')
         ]
 
     merged_df = pd.merge(merged_df, phased_mm_df[['mgra','microtransit']], on='mgra', how='left')
