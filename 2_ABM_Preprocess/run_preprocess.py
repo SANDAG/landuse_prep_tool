@@ -73,7 +73,7 @@ if policy_flag:
     rate = cfg['update_rate']
     #Finding index to update Mohubs Parking policy
     valid_hourly_costs_idx = imputed_parking_df[imputed_parking_df['hourly_imputed'].notnull() & (imputed_parking_df['hourly_imputed'] > 0)].index
-    imputed_parking_df.to_csv('imputed_parking_df1.csv')
+    # imputed_parking_df.to_csv('imputed_parking_df1.csv')
 #########################################################################
 #Parking File Creation
 def parking_costs()-> pd.DataFrame:
@@ -109,7 +109,7 @@ def parking_costs()-> pd.DataFrame:
 
         #Union of indices from employee and inventory hourly costs
         union_indices = set(valid_indices).union(set(valid_hourly_costs_idx))
-        imputed_parking_df.to_csv('imputed_parking_df2.csv')
+        # imputed_parking_df.to_csv('imputed_parking_df2.csv')
         # Filter imputed_parking_df using the union of indices
         imputed_parking_df = imputed_parking_df.loc[list(union_indices)]
         
