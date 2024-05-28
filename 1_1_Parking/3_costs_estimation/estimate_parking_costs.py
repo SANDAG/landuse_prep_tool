@@ -71,7 +71,7 @@ def create_districts(imputed_df, mgra_gdf, max_dist):
         parents, orient="index", columns=["district_id"]
     )
     buffer_geoms = buffer_geoms.join(district_ids).dissolve("district_id")
-    # buffer_geoms.to_csv("buffer_geoms.csv")
+    # buffer_geoms.to_file("buffer_geoms.shp", driver="ESRI Shapefile")
     # 3. Spatial Join all zones within hulls
     print("Performing spatial joins")
     # Remove no free parking zones
@@ -85,12 +85,14 @@ def create_districts(imputed_df, mgra_gdf, max_dist):
     parking_districts = parking_districts.sjoin(
         hull_geoms.geometry.reset_index(), how="left", predicate="within"
     ).drop(columns="index_right")
-
-    # Add district
+    # Add district - leading to duplicate records when a mgra is within multiple hulls
     parking_districts = parking_districts.sjoin(
         buffer_geoms.geometry.reset_index(), how="left", predicate="within"
     ).drop(columns="index_right")
+    duplicates = parking_districts.index.duplicated(keep='first')
+    parking_districts = parking_districts[~duplicates]
     # parking_districts.to_csv("parking_districts.csv")
+    
     # Determine parking_zone_type
     # is_prkdistrict    = zone within parking district
     # is_noprkspace     = zone within parking district but has no parking spaces

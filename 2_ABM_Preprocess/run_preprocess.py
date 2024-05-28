@@ -161,7 +161,6 @@ def parking_costs()-> pd.DataFrame:
     cost_df['total_spaces'] = cost_df[["paid_spaces", "free_spaces"]].sum(axis=1)
 
     parking_df = exp_prkcosts_df.join(districts_df['parking_type']).join(cost_df['total_spaces'])
-    # parking_df.to_csv(f"./parking_df_{policy_flag}_{scenario_year}.csv") #This is the reason for duplicate records
     parking_df['total_spaces'].fillna(0,inplace=True)
     parking_df.rename(columns={'total_spaces':'parking_spaces'},inplace=True)
     parking_df.index = parking_df.index.set_names('mgra')
@@ -487,11 +486,9 @@ def process_landuse()-> pd.DataFrame:
     merged_df = pd.merge(merged_df, phased_nev_df[['mgra','nev']], on='mgra', how='left')
     merged_df[['microtransit','nev']] = merged_df[['microtransit','nev']].fillna(0)
 
-    #Deuplicate check
+    #Duplicate check
     dup_count = merged_df.duplicated(subset=['mgra']).sum()
-    if dup_count > 0:
-        # print(f'Found {dup_count} duplicates in the merged dataframe.')
-        merged_df = merged_df.drop_duplicates(subset=['mgra'], keep='first')
+    assert dup_count == 0, f"Duplicate records found: {dup_count}"
 
     #Dropping MoHubName as it is string field, not int
     merged_df = merged_df.drop(columns=['MoHubName'], axis=1)
