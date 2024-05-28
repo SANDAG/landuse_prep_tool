@@ -492,6 +492,9 @@ def process_landuse()-> pd.DataFrame:
     if dup_count > 0:
         # print(f'Found {dup_count} duplicates in the merged dataframe.')
         merged_df = merged_df.drop_duplicates(subset=['mgra'], keep='first')
+
+    #Dropping MoHubName as it is string field, not int
+    merged_df = merged_df.drop(columns=['MoHubName'], axis=1)
     return merged_df.sort_values(by='mgra')
 
 # %%
