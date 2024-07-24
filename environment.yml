@@ -1,0 +1,18 @@
+channels:
+  - defaults
+dependencies:
+  - alphashape
+  - folium
+  - geonetworkx
+  - geopandas
+  - matplotlib
+  - networkx
+  - numpy
+  - osmnx
+  - scipy
+  - seaborn
+  - scikit-learn
+  - sqlalchemy
+  - statsmodels
+  - tqdm
+  - pyyaml
