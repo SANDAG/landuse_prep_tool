@@ -157,7 +157,7 @@ def label_imputations(imputed_df, reduced_df):
     return imputed_df
 
 def write_output(combined_df):
-    out_dir = settings.get("output_dir")
+    out_dir = settings.get("parking_output_dir")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     combined_df.to_csv(os.path.join(out_dir, 'imputed_parking_costs.csv'))

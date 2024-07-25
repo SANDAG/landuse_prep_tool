@@ -51,7 +51,7 @@ def run_space_estimation():
     )
 
 def get_streetdata(mgra_gdf):        
-    out_dir = settings.get("output_dir")
+    out_dir = settings.get("parking_output_dir")
     cache_dir = settings.get("cache_dir")
     data_path = os.path.join(out_dir, 'aggregated_street_data.csv')
     
@@ -131,7 +131,7 @@ def aggregate_streetdata(node_gdf, edge_gdf, mgra_gdf):
 
 
 def model_fit(street_data, parking_df, mgra_gdf, land_use):
-    out_dir = settings.get("output_dir")
+    out_dir = settings.get("parking_output_dir")
     mgra_gdf1 = mgra_gdf.copy().set_index("MGRA") #Joining based on index
     acres = (mgra_gdf1.geometry.area / 43560).to_frame("acres")
     lu = land_use[["hh", "hh_sf", "hh_mf", "emp_total"]]
