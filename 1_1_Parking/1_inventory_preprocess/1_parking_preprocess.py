@@ -5,6 +5,7 @@ import geopandas as gpd
 import yaml
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
+import sys
 
 def parking_reduction(raw_parking_df):
     # Free parking spaces
@@ -164,7 +165,7 @@ def write_output(combined_df):
 
 if __name__ == "__main__":
     
-    config = './1_setting_preprocess.yaml'
+    config = sys.argv[1]
     with open(config, "r") as stream:
         try:
             settings = yaml.load(stream, Loader=yaml.FullLoader)

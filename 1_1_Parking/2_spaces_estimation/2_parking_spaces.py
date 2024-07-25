@@ -8,8 +8,9 @@ from tqdm import tqdm
 import yaml
 import os
 import pickle
+import sys
 
-config = './2_setting_spaces.yaml'
+config = sys.argv[1]
 
 with open(config, "r") as stream:
     try:
