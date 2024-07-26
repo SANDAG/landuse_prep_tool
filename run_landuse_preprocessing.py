@@ -12,28 +12,37 @@ if __name__ == "__main__":
     env_name = os.environ["CONDA_DEFAULT_ENV"]
 
     if settings["run_parking_inventory_preprocess"]:
-        os.system(
+        errorcode = os.system(
             r"conda activate {0} && python 1_1_Parking\1_inventory_preprocess\1_parking_preprocess.py {1}".format(
                 env_name,
                 config_file
             )
         )
-        print("preprocessed inventory files are written")
+        if errorcode == 0:
+            print("preprocessed inventory files are written")
+        else:
+            raise Exception("Error in process")
 
     if settings["run_parking_spaces_estimation"]:
-        os.system(
+        errorcode = os.system(
             r"conda activate {0} && python 1_1_Parking\2_spaces_estimation\2_parking_spaces.py {1}".format(
                 env_name,
                 config_file
             )
         )
-        print("Initial files are written")
-        
+        if errorcode == 0:
+            print("Initial files are written")
+        else:
+            raise Exception("Error in process")
+
     if settings["run_ABM_preprocess"]:
-        os.system(
+        errorcode = os.system(
             r"conda activate {0} && python 2_ABM_Preprocess\run_preprocess.py {1}".format(
                 env_name,
                 config_file
             )
         )
-        print("basic files are written")
+        if errorcode == 0:
+            print("basic files are written")
+        else:
+            raise Exception("Error in process")
