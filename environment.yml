@@ -17,3 +17,4 @@ dependencies:
     - geonetworkx
     - osmnx
     - alphashape
+    - fiona
