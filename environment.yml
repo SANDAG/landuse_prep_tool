@@ -13,6 +13,7 @@ dependencies:
   - statsmodels
   - tqdm
   - pyyaml
+  - pyodbc
   - pip:
     - geonetworkx
     - osmnx
