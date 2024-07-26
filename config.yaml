@@ -4,13 +4,11 @@ run_ABM_preprocess: True
 
 input_dir: T:\ABM\data\sr15_inputs\landuse_prep
 EF_dir: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv #T:\socioec\Current_Projects\SR15\S0\version8\abm_csv
+cache_dir: "./output/cache"
+parking_output_dir: "T:/ABM/data/sr15_inputs/landuse_prep/parking_outputs"
 output_dir: .\
 scenario_year: 2035
 ff_year: 2022  #Flexible fleet year
-
-cache_dir: "./output/cache"
-
-parking_output_dir: "T:/ABM/data/sr15_inputs/landuse_prep/parking_outputs"
 
 # Inputs
 inputs:
