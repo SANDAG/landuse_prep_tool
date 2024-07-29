@@ -2,8 +2,8 @@ run_parking_inventory_preprocess: True
 run_parking_spaces_estimation: True
 run_ABM_preprocess: True
 
-input_dir: T:\ABM\data\sr15_inputs\landuse_prep
-EF_dir: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv #T:\socioec\Current_Projects\SR15\S0\version8\abm_csv
+input_dir: "T:/ABM/data/sr15_inputs/landuse_prep"
+EF_dir: "T:/socioec/Current_Projects/SR15/S0/version16/abm_csv" #T:\socioec\Current_Projects\SR15\S0\version8\abm_csv
 cache_dir: "./output/cache"
 parking_output_dir: "T:/ABM/data/sr15_inputs/landuse_prep/parking_outputs"
 output_dir: .\
