@@ -10,6 +10,6 @@ Tool for processing outputs given to us from Estimates and Forecasts to be used 
 6. Clone the repo into the directory.
 7. Open up config.yaml and do a find and replace searching for "T:\ABM\data\sr15_inputs\landuse_prep" and replacing them with the directory you created.
 8. Within config.yaml, update `scenario_year` and `ff_year` to be the year of the scenario that you're preparing the land use for.
-9. Edit the setting `EF_dir` to be the directory with the outputs from Estimates and Forecasts that the land use prep tool will process.
+9. Edit the setting `EF_dir` and `base_lu` to be the directory with the outputs from Estimates and Forecasts that the land use prep tool will process.
 10. Open, Anaconda prompt, navigate into the cloned repo and create an Anaconda environment using the environment.yml file.
 11. Activate the environment and run run_landuse_preprocessing.bat. The files will be created in the specified output_dir (the clone of the repo if that is unchanged).
