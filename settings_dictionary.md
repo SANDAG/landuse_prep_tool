@@ -1,4 +1,3 @@
-# Switches to run steps
 **run_parking_inventory_preprocess:** Switch to run the preprocessing of the parking inventory data.
 **run_parking_spaces_estimation:** Switch to estimate the number of parking spaces per MGRA.
 **run_ABM_preprocess:** Switch to run full ABM land use preprocessing.
@@ -34,12 +33,10 @@
 **model_params_free:**: File containing regression parameters to estimate the number of free spaces in each MGRA
 **model_params_paid:**: File containing regression parameters to estimate the number of paid spaces in each MGRA
 
-## Parking policies
 **implement_policy:** Boolean indicating whether or not to implement a parking policy.
 **policy_type:** Indicates what policy type to use. Must be either `pca` for PCA MGRAs, or `mohubs` for all mobility hubs.
 **parking_policy:** File containing the prices that define the policy.
 **update_rate:** Rate to update parking rates. Must be 0.5, 1, or 1.5.
 
-## SQL Server Connection
 **server:** GIS server containing information for different years.
 **database:** Database on `server` containing the desired information.
