@@ -30,7 +30,7 @@
 
 **persons_file:** The name of the person file provieded by E&F. It should be within `EF_dir`.
 
-**landuse_file:**The name of the land use file provieded by E&F. It should be within `EF_dir`.
+**landuse_file:** The name of the land use file provieded by E&F. It should be within `EF_dir`.
 
 **auxiliary_file:** File to be merged with the MGRA file. Contains the elementary and high school districts, availability of remote AV parking, as well as the number of refueling stations for each MGRA. This file needs to be present in `input_dir`.
 
