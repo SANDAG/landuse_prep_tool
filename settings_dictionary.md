@@ -27,10 +27,8 @@
 
 **walk_dist:** The maximum walking distance used in parking cost estimation.
 **walk_coef:** Coefficient for walk distance when estimating parking costs.
-**space_estimation_method:** The method used when estimating the number of spaces. Must be "lm". (NOT USED--REMOVE)
 **max_est_paid_spaces:** The maximum number of paid spaces in an MGRA if `policy_type == "mohubs"`.
 **max_est_free_spaces:** The maximum number of free spaces in an MGRA if `policy_type == "mohubs"`.
-**min_random_value:** NOT USED--REMOVE
 
 **geometry_file:** DUPLICATE OF inputs: geometry_file
 **imputed_parking_df:** DUPLICATE OF inputs: imputed_parking_df

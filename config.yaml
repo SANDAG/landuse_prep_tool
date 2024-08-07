@@ -31,10 +31,8 @@ micro_mob_file: micro_mobility.csv
 # Parameters
 walk_dist: 0.5 #in miles #0.5 default #0.25 for all Mohubs
 walk_coef: -0.3
-space_estimation_method: 'lm'
 max_est_paid_spaces: 3000
 max_est_free_spaces: 1000
-min_random_value: 0.5
 
 geometry_file: "parking_inputs/mgra15.shp"
 imputed_parking_df: "parking_outputs/imputed_parking_costs.csv"
