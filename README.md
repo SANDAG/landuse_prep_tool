@@ -1,6 +1,8 @@
 # SANDAG ABM3 Land Use Preparation Tool
 Tool for processing outputs given to us from Estimates and Forecasts to be used in ABM3
 
+A dictionary of the settings in config.yaml can be found [here](settings_dictionary.md).
+
 ## To easily run tool
 1. Gain access to the database RP2025 on the server DGISWSQL22 from GIS.
 2. Create a directory to run in. Create folders called "parking_inputs" and "parking_outputs."
