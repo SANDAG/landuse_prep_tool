@@ -22,10 +22,10 @@ with open(config, "r") as stream:
         print(exc)
 
 inputs = settings.get('inputs')        
-geometry = inputs.get("geometry")
+geometry = settings.get("geometry_file")
 base_lu_path = inputs.get("base_lu")
 # lu_path = inputs.get("land_use")
-imputed_parking_file = inputs.get("imputed_parking_df")
+imputed_parking_file = settings.get("imputed_parking_df")
 imputed_parking_df = pd.read_csv(imputed_parking_file).set_index('mgra')
 bike_net = inputs.get('bike_net')
 bike_node = inputs.get('bike_node')

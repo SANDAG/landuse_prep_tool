@@ -13,9 +13,7 @@ ff_year: 2022  #Flexible fleet year
 # Inputs
 inputs:
   raw_parking_inventory: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\mgra_parking_inventory.csv
-  base_lu: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv\mgra15_based_input_2022.csv       
-  geometry: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\mgra15.shp
-  imputed_parking_df: T:\ABM\data\sr15_inputs\landuse_prep\parking_outputs\imputed_parking_costs.csv
+  base_lu: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv\mgra15_based_input_2022.csv
   bike_net: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\SANDAG_Bike_Net.shp
   bike_node: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\SANDAG_Bike_Node.shp
 

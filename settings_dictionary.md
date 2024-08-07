@@ -13,8 +13,6 @@
 
 **inputs: raw_parking_inventory:** Input file for the raw parking inventory.
 **inputs: base_lu:** The base year land use to use for estimating the regression parameters for the number of free and paid spaces.
-**inputs: geometry:** Shapefile containing the MGRA polygons.
-**inputs: imputed_parking_df:** The file containing imputed parking data. This is the output of the parking inventory preprocess step.
 **inputs: bike_net:** Shapefile with the links of the active transportation network.
 **inputs: bike_node:** Shapefile with the nodes of the active transportation network.
 
@@ -30,8 +28,8 @@
 **max_est_paid_spaces:** The maximum number of paid spaces in an MGRA if `policy_type == "mohubs"`.
 **max_est_free_spaces:** The maximum number of free spaces in an MGRA if `policy_type == "mohubs"`.
 
-**geometry_file:** DUPLICATE OF inputs: geometry_file
-**imputed_parking_df:** DUPLICATE OF inputs: imputed_parking_df
+**geometry_file:** Shapefile containing the MGRA polygons.
+**imputed_parking_df:** The file containing imputed parking data. This is the output of the parking inventory preprocess step.
 **street_file:**: File containing the street data per MGRA. Created during parking space estimation.
 **model_params_free:**: File containing regression parameters to estimate the number of free spaces in each MGRA
 **model_params_paid:**: File containing regression parameters to estimate the number of paid spaces in each MGRA
