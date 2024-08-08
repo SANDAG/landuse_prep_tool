@@ -16,7 +16,7 @@
 
 **scenario_year:** The year of the scenario to prepare the inputs for.
 
-**ff_year:** The year of the flexible fleet network to use. If not provided it will use the same value as `scenario_year`. This only is needed if preparing inputs for a no-build scenario.
+**ff_year:** The year of the flexible fleet network to use. If not provided it will use the same value as `scenario_year`. This only is needed if preparing inputs for a no-build scenario, in which case it should be set to the base year (2022).
 
 **inputs: raw_parking_inventory:** Input file for the raw parking inventory.
 
