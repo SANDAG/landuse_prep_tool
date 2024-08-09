@@ -1,9 +1,14 @@
 # SANDAG ABM3 Land Use Preparation Tool
-Tool for processing outputs given to us from Estimates and Forecasts to be used in ABM3
+Tool for processing outputs given to us from Estimates and Forecasts to be used in ABM3. There are three main parts of the tool:
+1. Process outputs of the 2022 parking inventory to impute missing data.
+2. Estimate regression models to predict the number of free and paid spaces in an MGRA.
+3. Create household, person, and land use inputs for running ABM.
+
+Unless there are changes to the network or inventory, only the third step needs to be run.
 
 A dictionary of the settings in config.yaml can be found [here](settings_dictionary.md).
 
-## To easily run tool
+## To easily run all steps
 1. Gain access to the database RP2025 on the server DGISWSQL22 from GIS.
 2. Create a directory to run in. Create folders called "parking_inputs" and "parking_outputs."
 3. Copy the the files auxiliary.csv and micro_mobility.csv from T:\ABM\data\sr15_inputs\landuse_prep into the directory.
