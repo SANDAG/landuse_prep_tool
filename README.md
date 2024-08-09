@@ -4,7 +4,7 @@ Tool for processing outputs given to us from Estimates and Forecasts to be used 
 2. Estimate regression models to predict the number of free and paid spaces in an MGRA.
 3. Create household, person, and land use inputs for running ABM.
 
-Unless there are changes to the network or inventory, only the third step needs to be run.
+Unless there are changes to the base year network or inventory, only the third step needs to be run.
 
 A dictionary of the settings in config.yaml can be found [here](settings_dictionary.md).
 
