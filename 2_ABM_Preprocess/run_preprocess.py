@@ -50,7 +50,6 @@ micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
 auxiliary_file = os.path.join(input_dir,cfg['auxiliary_file']) #2019 school, remoteAVParking	refueling_stations
 
 
-method = cfg["space_estimation_method"]
 imputed_parking_df = pd.read_csv(os.path.join(input_dir,cfg["imputed_parking_df"])).set_index('mgra')
 lu_df = pd.read_csv(landuse_file).set_index("mgra")
 print("Reading MGRA shapefile data")
