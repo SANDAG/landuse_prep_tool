@@ -20,15 +20,13 @@ with open(config, "r") as stream:
     except yaml.YAMLError as exc:
         print("ERRRORRR")
         print(exc)
-
-inputs = settings.get('inputs')        
+       
 geometry = settings.get("geometry_file")
-base_lu_path = inputs.get("base_lu")
-# lu_path = inputs.get("land_use")
-imputed_parking_file = settings.get("imputed_parking_df")
-imputed_parking_df = pd.read_csv(imputed_parking_file).set_index('mgra')
-bike_net = inputs.get('bike_net')
-bike_node = inputs.get('bike_node')
+base_lu_path = settings.get("base_lu")
+parking_dir = settings.get("parking_output_dir")
+imputed_parking_df = pd.read_csv(os.path.join(parking_dir, 'imputed_parking_costs.csv')).set_index('mgra')
+bike_net = settings.get('bike_net')
+bike_node = settings.get('bike_node')
 
 base_lu_df = pd.read_csv(base_lu_path).set_index("mgra")
 # lu_df = pd.read_csv(lu_path).set_index("mgra")
@@ -39,7 +37,6 @@ mgra_gdf = gpd.read_file(path)[ #mgra index removed
 ]
 def run_space_estimation():
     method = settings.get("space_estimation_method")
-    cache_dir = settings.get("cache_dir")
 
     assert isinstance(mgra_gdf, gpd.GeoDataFrame)
     assert isinstance(imputed_parking_df, pd.DataFrame)
@@ -52,14 +49,12 @@ def run_space_estimation():
     )
 
 def get_streetdata(mgra_gdf):        
-    out_dir = settings.get("parking_output_dir")
-    cache_dir = settings.get("cache_dir")
-    data_path = os.path.join(out_dir, 'aggregated_street_data.csv')
+    data_path = os.path.join(parking_dir, 'aggregated_street_data.csv')
     
     #Fetch from local if available
     if not os.path.isfile(data_path):
         print("Aggregating street data")
-        node_gdf,edge_gdf = get_filter_network(cache_dir)
+        node_gdf,edge_gdf = get_filter_network()
 
         # Aggregate length and number of intersections per zone
         street_data = aggregate_streetdata(node_gdf, edge_gdf, mgra_gdf)
@@ -75,7 +70,7 @@ def get_streetdata(mgra_gdf):
     return street_data
 
 #Getting the network and node shapefile from settings
-def get_filter_network(cache_path):
+def get_filter_network():
     print('Reading network and nodes file')
     node_gdf = gpd.read_file(bike_node)[['NodeLev_ID','XCOORD','YCOORD','ZCOORD',"geometry"]]
     network_gdf = gpd.read_file(bike_net)[['A','B','Distance',"geometry",'ABBikeClas',
@@ -132,7 +127,7 @@ def aggregate_streetdata(node_gdf, edge_gdf, mgra_gdf):
 
 
 def model_fit(street_data, parking_df, mgra_gdf, land_use):
-    out_dir = settings.get("parking_output_dir")
+    
     mgra_gdf1 = mgra_gdf.copy().set_index("MGRA") #Joining based on index
     acres = (mgra_gdf1.geometry.area / 43560).to_frame("acres")
     lu = land_use[["hh", "hh_sf", "hh_mf", "emp_total"]]
@@ -181,8 +176,8 @@ def model_fit(street_data, parking_df, mgra_gdf, land_use):
         
 
     # Have to save the model parameters
-    prams_path1 = os.path.join(out_dir, 'free_spaces_ols_params.csv')
-    prams_path2 = os.path.join(out_dir, 'paid_spaces_ols_params.csv')
+    prams_path1 = os.path.join(parking_dir, 'free_spaces_ols_params.csv')
+    prams_path2 = os.path.join(parking_dir, 'paid_spaces_ols_params.csv')
 
     model_params1 = mod_lm_free.params.to_frame().reset_index()
     model_params1.columns = ['feature', 'parameter']

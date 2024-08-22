@@ -1,28 +1,28 @@
-run_parking_inventory_preprocess: True
-run_parking_spaces_estimation: False
+run_parking_inventory_preprocess: False
+run_parking_spaces_estimation: True
 run_ABM_preprocess: False
 
 
 #parking inventory preprocess settings
 raw_parking_inventory: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\mgra_parking_inventory.csv
 
+#parking space estimation settings
+base_lu: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv\mgra15_based_input_2022.csv
+bike_net: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\SANDAG_Bike_Net.shp
+bike_node: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\SANDAG_Bike_Node.shp
+geometry_file: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\mgra15.shp
+
 #common settings
-parking_output_dir: T:\ABM\user\sxu\ABM3\land_use_prep\0822\landuse_prep_tool\parking_outputs
+parking_output_dir: T:\ABM\user\sxu\ABM3\land_use_prep\0822\parking_outputs
 
 
 input_dir: T:\ABM\data\sr15_inputs\landuse_prep
 EF_dir: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv #T:\socioec\Current_Projects\SR15\S0\version8\abm_csv
-cache_dir: .\output\cache
+
 
 output_dir: .\
 scenario_year: 2035
 ff_year: 2022  #Flexible fleet year
-
-# Inputs
-inputs: 
-  base_lu: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv\mgra15_based_input_2022.csv
-  bike_net: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\SANDAG_Bike_Net.shp
-  bike_node: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\SANDAG_Bike_Node.shp
 
 households_file: synthetic_households_${scenario_year}.csv
 persons_file: synthetic_persons_${scenario_year}.csv
@@ -39,7 +39,7 @@ walk_coef: -0.3
 max_est_paid_spaces: 3000
 max_est_free_spaces: 1000
 
-geometry_file: "parking_inputs/mgra15.shp"
+
 imputed_parking_df: "parking_outputs/imputed_parking_costs.csv"
 street_file : "parking_outputs/aggregated_street_data.csv"
 model_params_free: "parking_outputs/free_spaces_ols_params.csv" #_version number for EF directory
