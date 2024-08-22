@@ -1,18 +1,25 @@
 run_parking_inventory_preprocess: True
-run_parking_spaces_estimation: True
-run_ABM_preprocess: True
+run_parking_spaces_estimation: False
+run_ABM_preprocess: False
+
+
+#parking inventory preprocess settings
+raw_parking_inventory: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\mgra_parking_inventory.csv
+
+#common settings
+parking_output_dir: T:\ABM\user\sxu\ABM3\land_use_prep\0822\landuse_prep_tool\parking_outputs
+
 
 input_dir: T:\ABM\data\sr15_inputs\landuse_prep
 EF_dir: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv #T:\socioec\Current_Projects\SR15\S0\version8\abm_csv
 cache_dir: .\output\cache
-parking_output_dir: T:\ABM\data\sr15_inputs\landuse_prep\parking_outputs
+
 output_dir: .\
 scenario_year: 2035
 ff_year: 2022  #Flexible fleet year
 
 # Inputs
-inputs:
-  raw_parking_inventory: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\mgra_parking_inventory.csv
+inputs: 
   base_lu: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv\mgra15_based_input_2022.csv
   bike_net: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\SANDAG_Bike_Net.shp
   bike_node: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\SANDAG_Bike_Node.shp

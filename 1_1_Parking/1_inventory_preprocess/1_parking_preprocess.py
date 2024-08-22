@@ -174,9 +174,8 @@ if __name__ == "__main__":
         except yaml.YAMLError as exc:
             print("ERRRORRR")
             print(exc)
-
-    inputs = settings.get('inputs')        
-    raw_path = inputs.get("raw_parking_inventory")
+        
+    raw_path = settings.get("raw_parking_inventory")
     raw_parking_df = pd.read_csv(raw_path).set_index("mgra")
     print("Reducing raw parking data")
     
