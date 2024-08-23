@@ -1,6 +1,6 @@
 run_parking_inventory_preprocess: False
-run_parking_spaces_estimation: True
-run_ABM_preprocess: False
+run_parking_spaces_estimation: False
+run_ABM_preprocess: True
 
 
 #parking inventory preprocess settings
@@ -12,26 +12,29 @@ bike_net: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\SANDAG_Bike_Net.sh
 bike_node: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\SANDAG_Bike_Node.shp
 geometry_file: T:\ABM\data\sr15_inputs\landuse_prep\parking_inputs\mgra15.shp
 
-#common settings
-parking_output_dir: T:\ABM\user\sxu\ABM3\land_use_prep\0822\parking_outputs
+#parking cost estimation settings
+# Files for parking policies
+implement_policy: True
+policy_type: 'mohubs' #possible values: 'pca' for PCA MGRAs,' mohubs' for ALL Mobility Hubs
+parking_policy: "parking_outputs/ParkingPolicies_${scenario_year}.csv" #only 2035 present
+update_rate: 1 #possible values: 1,1.5,0.5
 
-
+#ABM preprocessing settings
 input_dir: T:\ABM\data\sr15_inputs\landuse_prep
-EF_dir: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv #T:\socioec\Current_Projects\SR15\S0\version8\abm_csv
-
-
+EF_dir: T:\socioec\Current_Projects\SR15\S0\version16\abm_csv
 output_dir: .\
 scenario_year: 2035
-ff_year: 2022  #Flexible fleet year
-
+ff_year: 2035  #Flexible fleet year
 households_file: synthetic_households_${scenario_year}.csv
 persons_file: synthetic_persons_${scenario_year}.csv
 landuse_file: mgra15_based_input_${scenario_year}.csv
-
-
 auxiliary_file: auxiliary.csv #School and AV data
 micro_mob_file: micro_mobility.csv
-# mgra_moHub_map: "moHub_mgra_map.csv"
+
+imputed_parking_df: imputed_parking_costs.csv
+street_file : aggregated_street_data.csv
+model_params_free: free_spaces_ols_params.csv #_version number for EF directory
+model_params_paid: paid_spaces_ols_params.csv
 
 # Parameters
 walk_dist: 0.5 #in miles #0.5 default #0.25 for all Mohubs
@@ -39,18 +42,8 @@ walk_coef: -0.3
 max_est_paid_spaces: 3000
 max_est_free_spaces: 1000
 
-
-imputed_parking_df: "parking_outputs/imputed_parking_costs.csv"
-street_file : "parking_outputs/aggregated_street_data.csv"
-model_params_free: "parking_outputs/free_spaces_ols_params.csv" #_version number for EF directory
-model_params_paid: "parking_outputs/paid_spaces_ols_params.csv"
-# Comment files from input for new street data and ols parameters
-
-# Files for parking policies
-implement_policy: True
-policy_type: 'mohubs' #possible values: 'pca' for PCA MGRAs,' mohubs' for ALL Mobility Hubs
-parking_policy: "parking_outputs/ParkingPolicies_${scenario_year}.csv" #only 2035 present
-update_rate: 1 #possible values: 1,1.5,0.5
+#common settings
+parking_output_dir: T:\ABM\user\sxu\ABM3\land_use_prep\0822\parking_outputs
 
 #SQL Server Connection
 server : 'DGISWSQL22'

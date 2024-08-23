@@ -25,6 +25,7 @@ with open(config_file) as f:
     cfg = yaml.load(f, Loader=yaml.FullLoader)
 
 input_dir = cfg['input_dir']
+parking_output = cfg['parking_output_dir']
 scenario_year = cfg['scenario_year']
 write_dir = cfg['output_dir']
 EF_dir = cfg['EF_dir']
@@ -50,15 +51,15 @@ micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
 auxiliary_file = os.path.join(input_dir,cfg['auxiliary_file']) #2019 school, remoteAVParking	refueling_stations
 
 
-imputed_parking_df = pd.read_csv(os.path.join(input_dir,cfg["imputed_parking_df"])).set_index('mgra')
+imputed_parking_df = pd.read_csv(os.path.join(parking_output,cfg["imputed_parking_df"])).set_index('mgra')
 lu_df = pd.read_csv(landuse_file).set_index("mgra")
 print("Reading MGRA shapefile data")
-mgra_gdf = gpd.read_file(os.path.join(input_dir,cfg["geometry_file"])).set_index("MGRA")[ #mgra index removed
+mgra_gdf = gpd.read_file(cfg["geometry_file"]).set_index("MGRA")[ #mgra index removed
     ["TAZ", "geometry"]
 ]
-street_data = pd.read_csv(os.path.join(input_dir,cfg["street_file"])).set_index("MGRA")
-model_params_free = pd.read_csv(os.path.join(input_dir,cfg["model_params_free"]))
-model_params_paid = pd.read_csv(os.path.join(input_dir,cfg["model_params_paid"]))
+street_data = pd.read_csv(os.path.join(parking_output,cfg["street_file"])).set_index("MGRA")
+model_params_free = pd.read_csv(os.path.join(parking_output,cfg["model_params_free"]))
+model_params_paid = pd.read_csv(os.path.join(parking_output,cfg["model_params_paid"]))
 max_dist = cfg["walk_dist"]
 walk_coef = cfg["walk_coef"]
 
