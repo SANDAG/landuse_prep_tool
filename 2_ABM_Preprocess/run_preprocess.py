@@ -69,7 +69,7 @@ policy_type = ''
 if policy_flag:
     policy_type = cfg['policy_type']
     print(f"Applying parking policy to {policy_type} MGRAs")
-    parking_policy = os.path.join(input_dir,cfg['parking_policy'].replace('${scenario_year}', str(scenario_year)))
+    parking_policy = os.path.join(parking_output,cfg['parking_policy'].replace('${scenario_year}', str(scenario_year)))
     rate = cfg['update_rate']
     #Finding index to update Mohubs Parking policy
     valid_hourly_costs_idx = imputed_parking_df[imputed_parking_df['hourly_imputed'].notnull() & (imputed_parking_df['hourly_imputed'] > 0)].index
