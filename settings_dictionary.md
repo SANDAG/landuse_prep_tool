@@ -1,30 +1,38 @@
+**config_procpkg.yaml**
+
 **run_parking_inventory_preprocess:** Switch to run the preprocessing of the parking inventory data.
 
 **run_parking_spaces_estimation:** Switch to estimate the number of parking spaces per MGRA.
 
+**raw_parking_inventory:** Input file 'mgra_parking_inventory.csv' for the raw parking inventory.
+
+**base_lu:** The base year land use to use for estimating the regression parameters for the number of free and paid spaces.
+
+**bike_net:** Shapefile with the links of the active transportation network.
+
+**bike_node:** Shapefile with the nodes of the active transportation network.
+
+**geometry_file:** Shapefile containing the MGRA polygons.
+
+**parking_output_dir:** The directory to write the outputs of the parking inventory preprocessing and parking spaces estimation in. **The parking outputs will be written in this location.**
+
+**config_year.yaml**
+
 **run_ABM_preprocess:** Switch to run full ABM land use preprocessing.
 
-**input_dir:** Directory containing the inputs for the ABM preprocessing. Many of the configuration files need to be in it.
+**parking_output_dir:** The directory containing the outputs of the parking preprocessing steps (parking inventory preprocess and parking space estimation). **These files are used as input of ABM preprocessing step.**
 
-**EF_dir:** Directory containing the files provided by Estimates and Forecasts.
+**geometry_file:** Shapefile containing the MGRA polygons.
 
-**cache_dir:** Directory containing a file that stores the aggregated street data. If the file aggregated_street_data.csv is not present in `cache_dir`, the street data will be aggregated.
+**input_dir:** Directory containing the inputs for the ABM preprocessing.
 
-**parking_output_dir:** The directory containing the outputs of the parking preprocessing steps (parking inventory preprocess and parking space estimation).
+**EF_dir:** Directory containing the files provided by Estimates and Forecasts. 
 
 **output_dir:** The directory to write the outputs of the ABM preprocessing in. **The ABM inputs will be written in this location.**
 
 **scenario_year:** The year of the scenario to prepare the inputs for.
 
 **ff_year:** The year of the flexible fleet network to use. If not provided it will use the same value as `scenario_year`. This only is needed if preparing inputs for a no-build scenario, in which case it should be set to the base year (2022).
-
-**inputs: raw_parking_inventory:** Input file for the raw parking inventory.
-
-**inputs: base_lu:** The base year land use to use for estimating the regression parameters for the number of free and paid spaces.
-
-**inputs: bike_net:** Shapefile with the links of the active transportation network.
-
-**inputs: bike_node:** Shapefile with the nodes of the active transportation network.
 
 **household_file:** The name of the household file provieded by E&F. It should be within `EF_dir`.
 
@@ -43,8 +51,6 @@
 **max_est_paid_spaces:** The maximum number of paid spaces in an MGRA if `policy_type == "mohubs"`.
 
 **max_est_free_spaces:** The maximum number of free spaces in an MGRA if `policy_type == "mohubs"`.
-
-**geometry_file:** Shapefile containing the MGRA polygons.
 
 **imputed_parking_df:** The file containing imputed parking data. This is the output of the parking inventory preprocess step.
 
