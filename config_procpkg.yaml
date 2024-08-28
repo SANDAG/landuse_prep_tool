@@ -1,0 +1,15 @@
+run_parking_inventory_preprocess: True
+run_parking_spaces_estimation: True
+
+
+#parking inventory preprocess settings
+raw_parking_inventory: T:\projects\sr15\land_use\parking_inputs\mgra_parking_inventory.csv
+
+#parking space estimation settings
+base_lu: T:\socioec\Current_Projects\SR15\S0\version19\abm_csv\mgra15_based_input_2022.csv
+bike_net: T:\projects\sr15\tned_etl\2025RP_draft\2022\2022Base_20240823\SANDAG_Bike_Net.shp
+bike_node: T:\projects\sr15\tned_etl\2025RP_draft\2022\2022Base_20240823\SANDAG_Bike_Node.shp
+geometry_file: T:\projects\sr15\geographies\mgra15.shp
+
+#common settings
+parking_output_dir: T:\projects\sr15\land_use\parking_processed\20240827

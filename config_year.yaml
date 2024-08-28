@@ -1,0 +1,39 @@
+run_ABM_preprocess: True
+
+#common settings
+parking_output_dir: T:\projects\sr15\land_use\parking_processed\20240827
+geometry_file: T:\projects\sr15\geographies\mgra15.shp
+
+#ABM preprocessing settings
+input_dir: T:\projects\sr15\land_use
+EF_dir: T:\socioec\Current_Projects\SR15\S0\version19\abm_csv
+output_dir: T:\projects\sr15\land_use\2025RP_draft\2022\20240827
+scenario_year: 2022
+ff_year: 2022  #Flexible fleet year
+households_file: synthetic_households_${scenario_year}.csv
+persons_file: synthetic_persons_${scenario_year}.csv
+landuse_file: mgra15_based_input_${scenario_year}.csv
+auxiliary_file: auxiliary_columns.csv #School and AV data
+micro_mob_file: micro_mobility_allyears.csv
+
+#parking cost estimation settings
+# Files for parking policies
+implement_policy: False
+policy_type: 'mohubs' #possible values: 'pca' for PCA MGRAs,' mohubs' for ALL Mobility Hubs
+parking_policy: "parking_outputs/ParkingPolicies_${scenario_year}.csv" #only 2035 present
+update_rate: 1 #possible values: 1,1.5,0.5
+
+imputed_parking_df: imputed_parking_costs.csv
+street_file : aggregated_street_data.csv
+model_params_free: free_spaces_ols_params.csv #_version number for EF directory
+model_params_paid: paid_spaces_ols_params.csv
+
+# Parameters
+walk_dist: 0.5 #in miles #0.5 default #0.25 for all Mohubs
+walk_coef: -0.3
+max_est_paid_spaces: 3000
+max_est_free_spaces: 1000
+
+#SQL Server Connection
+server : 'DGISWSQL22'
+database : 'RP2025'
