@@ -1,1 +1,1 @@
-python run_landuse_preprocessing.py config.yaml
+python T:\ABM\release_test\tools\landuse_prep_tool\version_2_0\run_landuse_preprocessing.py config_{year}.yaml
