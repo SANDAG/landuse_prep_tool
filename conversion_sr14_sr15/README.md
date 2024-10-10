@@ -64,7 +64,7 @@ User should clone (or download) these files to their local directory. Next, foll
     - SR14 to SR15 MGRA crosswalk 
 2.	Open the config.yaml file and update the input and output directories as well as the input and output file names. 
 
-    ![image](images\config_pic.png)
+    ![image](images\config.png)
 
 3.	Open a terminal and navigate to the folder where conversion_sr14_sr15.py is saved.
 4.	Once in the folder, type the following: **python conversion_sr14_sr15.py**
