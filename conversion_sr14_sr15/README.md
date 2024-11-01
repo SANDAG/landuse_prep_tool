@@ -20,7 +20,7 @@ The synthetic household and person files undergo minimal processing. For the hou
 
 ### Land Use
 The land use file undergoes extensive processing. There are three major procedures implemented depending on the columns: 
-1) The converted SR14 synthetic population is used to populate household and person total columns 
+1) The SR15 synthetic population is used to populate household and person total columns 
 
 2) Some ABM3 columns are maintained in the output MGRA file exactly as they are specified in the input file 
 
@@ -55,7 +55,7 @@ To run the conversion, two files are required:
 1.	_config.yaml_ – which contains input and output directories and file names
 2.	_conversion_sr14_sr15.py_ – which contains the code to convert the files 
 
-User should clone (or download) these files to their local directory. Next, follow the steps below to convert Series 14 data to Series 15 format:  
+User should clone (or download) these files to their local directory. The script runs using the base Anaconda3 environment, so no additional environment setup is required. Next, follow the steps below to convert Series 14 data to Series 15 format:  
 1.	Save the input files in the directory of your choice. Input files should include: 
     - Series 14 synthetic person file
     - Series 14 synthetic household file

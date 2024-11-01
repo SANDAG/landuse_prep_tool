@@ -14,4 +14,4 @@ output:
   filenames:
     households: 'households.csv'
     persons: 'persons.csv'
-    land_use: 'mgra13_based_input2035.csv'
+    land_use: 'mgra15_based_input2035.csv'
