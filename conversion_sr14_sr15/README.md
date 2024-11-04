@@ -16,7 +16,7 @@ Table 1 lists the input files required to run the conversion script and their pu
 
 ## 2.2 Data Processing
 ### Households and Persons 
-The synthetic household and person files undergo minimal processing. For the household file, the MGRA column is updated using the SR14 to SR15 crosswalk and the column “hworkers” is renamed to “num_workers”. For the persons file, column ‘miltary’ is renamed to ‘military’, and columns ‘indcen’, ‘weeks’, ‘hours’, ‘rac1p’, ‘hisp’, and ‘version’ are removed, as they are not used in the modeling process. These files are used to calculate household and person totals in the converted SR15 land use file. 
+The synthetic household and person files undergo minimal processing. For the household file, the MGRA column is updated using the SR14 to SR15 crosswalk and the column “hworkers” is renamed to “num_workers”. The person file is not modified from the original SR14 file. The SR15 person and household files are used to calculate household and person totals in the converted SR15 land use file. 
 
 ### Land Use
 The land use file undergoes extensive processing. There are three major procedures implemented depending on the columns: 

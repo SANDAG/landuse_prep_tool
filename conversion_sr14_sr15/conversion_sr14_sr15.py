@@ -41,12 +41,6 @@ class Converter:
         hh_s15_converted = hh_s14.rename(columns={'hworkers': 'num_workers'})
         return hh_s15_converted
 
-    def convert_per(self):
-        per_s14 = self.data_loader.per_s14
-        per_s14.rename(columns={'miltary': 'military'}, inplace=True)
-        per_s15_converted = per_s14.drop(columns=['indcen', 'weeks', 'hours', 'rac1p', 'hisp', 'version'])
-        return per_s15_converted
-
     def convert_landuse(self, hh_s15_converted, per_s15_converted):
         landuse_s14 = self.data_loader.landuse_s14
         landuse_abm3 = self.data_loader.landuse_abm3
@@ -65,7 +59,7 @@ class Converter:
         landuse_s15 = (per_hh_s15.groupby('mgra').size().reset_index().rename(columns={0: 'pop'})
                        .merge(landuse_s15, on='mgra', how='right'))
 
-        landuse_s15 = (per_hh_s15[per_hh_s15['unittype'] == 1].groupby(['mgra', 'military']).size().unstack().reset_index()
+        landuse_s15 = (per_hh_s15[per_hh_s15['unittype'] == 1].groupby(['mgra', 'miltary']).size().unstack().reset_index()
                        .rename(columns={0: 'gq_civ', 1: 'gq_mil'})
                        .merge(landuse_s15, on='mgra', how='right'))
 
@@ -136,7 +130,7 @@ class Main:
 
     def run(self):
         hh_s15 = self.converter.convert_hh()
-        per_s15 = self.converter.convert_per()
+        per_s15 = self.data_loader.per_s14
         landuse_s15 = self.converter.convert_landuse(hh_s15, per_s15)
 
         os.chdir(self.config_loader.config['output']['output_dir'])
