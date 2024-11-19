@@ -1,17 +1,20 @@
 # Input settings
 input:
-  input_dir: '/home/eamcevoy/edna.aguilar/OneDrive - Resource Systems Group, Inc/Documents/20_Projects/SANDAG/inputs'
+  input_dir: '/home/eamcevoy/OneDrive_RSG/Documents/20_Projects/SANDAG/inputs'
   filenames:
     households: 'households.csv'
     persons: 'persons.csv'
     mgra_xwalk: 'xref_mgra13-15.csv'
+    taz_xwalk: 'xref_taz13_15.csv'
     land_use: 'mgra13_based_input2035.csv'
     land_use_abm3: 'mgra15_based_input2035.csv'
+    input_s15_per: 'input_s15_persons.csv'
 
 # Output settings
 output:
-  output_dir: '/home/eamcevoy/edna.aguilar/OneDrive - Resource Systems Group, Inc/Documents/20_Projects/SANDAG/outputs'
+  output_dir: '/home/eamcevoy/OneDrive_RSG/Documents/20_Projects/SANDAG/outputs'
   filenames:
     households: 'households.csv'
     persons: 'persons.csv'
     land_use: 'mgra15_based_input2035.csv'
+

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import yaml
 import os
 
@@ -18,8 +19,10 @@ class DataLoader:
         self.hh_s14 = None
         self.per_s14 = None
         self.mgra_xwalk = None
+        self.taz_xwalk = None
         self.landuse_s14 = None
         self.landuse_abm3 = None
+        self.input_s15_per = None
         self.load_data()
 
     def load_data(self):
@@ -27,19 +30,36 @@ class DataLoader:
         self.hh_s14 = pd.read_csv(self.config['input']['filenames']['households'])
         self.per_s14 = pd.read_csv(self.config['input']['filenames']['persons'])
         self.mgra_xwalk = pd.read_csv(self.config['input']['filenames']['mgra_xwalk'])
+        self.taz_xwalk = pd.read_csv(self.config['input']['filenames']['taz_xwalk'])
         self.landuse_s14 = pd.read_csv(self.config['input']['filenames']['land_use'])
         self.landuse_abm3 = pd.read_csv(self.config['input']['filenames']['land_use_abm3'])
+        self.input_s15_per =  pd.read_csv(self.config['input']['filenames']['input_s15_per'])
 
 class Converter:
     def __init__(self, data_loader):
         self.data_loader = data_loader
         self.mgra_xwalk_dict = self.data_loader.mgra_xwalk.set_index('MGRA13')['MGRA15'].to_dict()
+        self.taz_xwalk_dict = self.data_loader.taz_xwalk.set_index('TAZ13')['TAZ15'].to_dict()
 
     def convert_hh(self):
         hh_s14 = self.data_loader.hh_s14
         hh_s14['mgra'] = hh_s14['mgra'].replace(self.mgra_xwalk_dict)
+        hh_s14['taz'] = hh_s14['taz'].replace(self.taz_xwalk_dict)
         hh_s15_converted = hh_s14.rename(columns={'hworkers': 'num_workers'})
         return hh_s15_converted
+    
+    def convert_per(self):
+        per_s15 = self.data_loader.per_s14
+        input_s15_per = self.data_loader.input_s15_per
+        input_s15_per['naics2_original_code'] = input_s15_per['naics2_original_code'].astype(str)
+        input_s15_per['soc2'] = input_s15_per['soc2'].astype(str)
+        input_s15_workers = input_s15_per[input_s15_per['pemploy'].isin([1,2])] 
+        workers_s15 = input_s15_per[input_s15_per['pemploy'].isin([1,2])]
+        per_s15[['naics2_original_code','soc2']] = ""
+        random_samples = input_s15_workers[['naics2_original_code', 'soc2']].sample(n=len(workers_s15), replace=True)
+        per_s15.loc[workers_s15.index, ['naics2_original_code', 'soc2']] = random_samples.values
+        per_s15[['naics2_original_code','soc2']] = per_s15[['naics2_original_code','soc2']].replace("","0")
+        return per_s15
 
     def convert_landuse(self, hh_s15_converted, per_s15_converted):
         landuse_s14 = self.data_loader.landuse_s14
@@ -130,9 +150,9 @@ class Main:
 
     def run(self):
         hh_s15 = self.converter.convert_hh()
-        per_s15 = self.data_loader.per_s14
+        per_s15 = self.converter.convert_per()
         landuse_s15 = self.converter.convert_landuse(hh_s15, per_s15)
-
+        
         os.chdir(self.config_loader.config['output']['output_dir'])
         hh_s15.to_csv(self.config_loader.config['output']['filenames']['households'], index=False)
         per_s15.to_csv(self.config_loader.config['output']['filenames']['persons'], index=False)
