@@ -14,7 +14,7 @@ Table 1 lists the input files required to run the conversion script and their pu
 |ABM3 land use| Source of SR15 MGRAs, TAZs, acres, park space, parking costs, and a few other fields held constant in converted MGRA data.|
 |MGRA SR14 to SR15 crosswalk| Crosswalk used for conversion. Created via a separate process in which the centroid of each SR14 MGRA was geocoded to the polygon of SR15 MGRAs.|
 |TAZ SR14 to SR15 crosswalk| Crosswalk used for conversion.|
-|SR15 synthetic person file| Generates naics2_original_code and soc2 columns for SR15 synthetic person file by drawing a uniform random sample.|
+|SR15 synthetic person file| Generates naics2_original_code and soc2 columns for SR15 synthetic person file by drawing a uniform random sample using the specified random seed number.| 
 
 ## 2.2 Data Processing
 ### Households and Persons 
@@ -70,7 +70,7 @@ User should clone (or download) these files to their local directory. The script
 
     ![image](images/config.png)
 
-3.	Open a terminal and navigate to the folder where conversion_sr14_sr15.py is saved.
+3.	Open an Anaconda Prompt (Anaconda3) and navigate to the folder where conversion_sr14_sr15.py is saved.
 4.	Once in the folder, type the following: **python conversion_sr14_sr15.py**
 5.	When the conversion ends, the converted files will be saved in the specified output directory (line 13 of config.yaml). 
 

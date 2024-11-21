@@ -23,6 +23,7 @@ class DataLoader:
         self.landuse_s14 = None
         self.landuse_abm3 = None
         self.input_s15_per = None
+        self.random_seed = None
         self.load_data()
 
     def load_data(self):
@@ -34,6 +35,7 @@ class DataLoader:
         self.landuse_s14 = pd.read_csv(self.config['input']['filenames']['land_use'])
         self.landuse_abm3 = pd.read_csv(self.config['input']['filenames']['land_use_abm3'])
         self.input_s15_per =  pd.read_csv(self.config['input']['filenames']['input_s15_per'])
+        self.random_seed = self.config['input']['random_seed']
 
 class Converter:
     def __init__(self, data_loader):
@@ -51,12 +53,13 @@ class Converter:
     def convert_per(self):
         per_s15 = self.data_loader.per_s14
         input_s15_per = self.data_loader.input_s15_per
+        random_seed = self.data_loader.random_seed
         input_s15_per['naics2_original_code'] = input_s15_per['naics2_original_code'].astype(str)
         input_s15_per['soc2'] = input_s15_per['soc2'].astype(str)
         input_s15_workers = input_s15_per[input_s15_per['pemploy'].isin([1,2])] 
-        workers_s15 = input_s15_per[input_s15_per['pemploy'].isin([1,2])]
+        workers_s15 = per_s15[per_s15['pemploy'].isin([1,2])]
         per_s15[['naics2_original_code','soc2']] = ""
-        random_samples = input_s15_workers[['naics2_original_code', 'soc2']].sample(n=len(workers_s15), replace=True)
+        random_samples = input_s15_workers[['naics2_original_code', 'soc2']].sample(n=len(workers_s15), replace=True, random_state=random_seed)
         per_s15.loc[workers_s15.index, ['naics2_original_code', 'soc2']] = random_samples.values
         per_s15[['naics2_original_code','soc2']] = per_s15[['naics2_original_code','soc2']].replace("","0")
         return per_s15

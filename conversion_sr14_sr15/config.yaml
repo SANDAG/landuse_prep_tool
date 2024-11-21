@@ -1,6 +1,7 @@
 # Input settings
 input:
   input_dir: '/home/eamcevoy/OneDrive_RSG/Documents/20_Projects/SANDAG/inputs'
+  random_seed: 42
   filenames:
     households: 'households.csv'
     persons: 'persons.csv'
