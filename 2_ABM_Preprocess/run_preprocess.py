@@ -235,16 +235,16 @@ def process_household()-> pd.DataFrame:
     households['household_serial_no'] = 0
     households['version'] = 0
     
-    #create poverty (ref: ASPE)
-    households['poverty_guideline'] = 12760
-    households.loc[(households['persons'] == 2), 'poverty_guideline'] = 17240
-    households.loc[(households['persons'] == 3), 'poverty_guideline'] = 21720
-    households.loc[(households['persons'] == 4), 'poverty_guideline'] = 26200
-    households.loc[(households['persons'] == 5), 'poverty_guideline'] = 30680
-    households.loc[(households['persons'] == 6), 'poverty_guideline'] = 35160
-    households.loc[(households['persons'] == 7), 'poverty_guideline'] = 39640
-    households.loc[(households['persons'] == 8), 'poverty_guideline'] = 44120
-    households.loc[(households['persons'] >= 9), 'poverty_guideline'] = 44120 + 4480* (households['persons']-8)
+    #create poverty (ref: ASPE 2022 Poverty guidelines)
+    households['poverty_guideline'] = 13590
+    households.loc[(households['persons'] == 2), 'poverty_guideline'] = 18310
+    households.loc[(households['persons'] == 3), 'poverty_guideline'] = 23030
+    households.loc[(households['persons'] == 4), 'poverty_guideline'] = 27750
+    households.loc[(households['persons'] == 5), 'poverty_guideline'] = 32470
+    households.loc[(households['persons'] == 6), 'poverty_guideline'] = 37190
+    households.loc[(households['persons'] == 7), 'poverty_guideline'] = 41910
+    households.loc[(households['persons'] == 8), 'poverty_guideline'] = 46630
+    households.loc[(households['persons'] >= 9), 'poverty_guideline'] = 46630 + 4720* (households['persons']-8)
     
     households['poverty'] = households['hinc']/households['poverty_guideline']
     
