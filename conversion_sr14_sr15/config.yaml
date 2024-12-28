@@ -1,6 +1,6 @@
 # Input settings
 input:
-  input_dir: '/home/eamcevoy/OneDrive_RSG/Documents/20_Projects/SANDAG/inputs'
+  input_dir: 'inputs'
   random_seed: 42
   filenames:
     households: 'households.csv'
@@ -10,12 +10,14 @@ input:
     land_use: 'mgra13_based_input2035.csv'
     land_use_abm3: 'mgra15_based_input2035.csv'
     input_s15_per: 'input_s15_persons.csv'
+    parking_cost_s14: 'mgraParkingCost.csv'
+    mgra_s14_shp: 'shapefiles/SANDAG_MGRA.shp'
+    mgra_s15_shp: 'shapefiles/mgra15.shp'
 
 # Output settings
 output:
-  output_dir: '/home/eamcevoy/OneDrive_RSG/Documents/20_Projects/SANDAG/outputs'
+  output_dir: '/outputs'
   filenames:
     households: 'households.csv'
     persons: 'persons.csv'
     land_use: 'mgra15_based_input2035.csv'
-
