@@ -155,6 +155,7 @@ class Converter:
         
         parking_s15 = self._parking_conversion(mgra_s14_shp, mgra_s15_shp, parking_s14, landuse_s14)
         landuse_s15 = landuse_s15.merge(parking_s15, on='mgra', how='left').fillna(0)
+        landuse_s15.loc[landuse_s15['mgra'] == 6895, 'parking_type'] = 3
         return landuse_s15
     
     def _min_parkarea(self, group, park_area_s14):
@@ -199,8 +200,7 @@ class Converter:
             parking_costs_s15['parking_type']
         )
         parking_costs_s15['parking_type'] = parking_costs_s15['parking_type'].fillna(3).astype(int)
-        
-        parking_s15 = pd.merge(parking_stalls_s15, parking_costs_s15, right_on='mgra', left_index=True, how='left').fillna(0)
+        parking_s15 = pd.merge(parking_stalls_s15, parking_costs_s15, right_on='mgra', left_index=True, how='outer').fillna(0)
         return parking_s15
 
 class Main:
