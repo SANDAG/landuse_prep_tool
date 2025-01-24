@@ -1,4 +1,5 @@
 import pandas as pd
+import geopandas as gpd
 import numpy as np
 import yaml
 import os
@@ -24,6 +25,9 @@ class DataLoader:
         self.landuse_abm3 = None
         self.input_s15_per = None
         self.random_seed = None
+        self.mgra_s14_shp = None
+        self.mgra_s15_shp = None
+        self.parking_s14 = None
         self.load_data()
 
     def load_data(self):
@@ -36,13 +40,16 @@ class DataLoader:
         self.landuse_abm3 = pd.read_csv(self.config['input']['filenames']['land_use_abm3'])
         self.input_s15_per =  pd.read_csv(self.config['input']['filenames']['input_s15_per'])
         self.random_seed = self.config['input']['random_seed']
+        self.mgra_s14_shp = gpd.read_file(self.config['input']['filenames']['mgra_s14_shp'])
+        self.mgra_s15_shp = gpd.read_file(self.config['input']['filenames']['mgra_s15_shp'])
+        self.parking_s14 = pd.read_csv(self.config['input']['filenames']['parking_cost_s14'])
 
 class Converter:
     def __init__(self, data_loader):
         self.data_loader = data_loader
         self.mgra_xwalk_dict = self.data_loader.mgra_xwalk.set_index('MGRA13')['MGRA15'].to_dict()
         self.taz_xwalk_dict = self.data_loader.taz_xwalk.set_index('TAZ13')['TAZ15'].to_dict()
-
+        
     def convert_hh(self):
         hh_s14 = self.data_loader.hh_s14
         hh_s14['mgra'] = hh_s14['mgra'].replace(self.mgra_xwalk_dict)
@@ -67,9 +74,12 @@ class Converter:
     def convert_landuse(self, hh_s15_converted, per_s15_converted):
         landuse_s14 = self.data_loader.landuse_s14
         landuse_abm3 = self.data_loader.landuse_abm3
+        parking_s14 = self.data_loader.parking_s14
+        mgra_s14_shp = self.data_loader.mgra_s14_shp
+        mgra_s15_shp = self.data_loader.mgra_s15_shp
         landuse_s15 = pd.DataFrame()
         landuse_s14['mgra_15'] = landuse_s14['mgra'].replace(self.mgra_xwalk_dict)
-
+        
         cols_to_keep_from_abm3 = ['taz', 'luz_id', 'pseudomsa', 'zip09', 'parkactive', 'openspaceparkpreserve', 'beachactive',
                         'district27', 'milestocoast', 'acres', 'land_acres', 'effective_acres', 'truckregiontype', 'nev',
                         'remoteAVParking', 'refueling_stations', 'MicroAccessTime', 'microtransit', 'ech_dist', 'hch_dist']
@@ -142,8 +152,56 @@ class Converter:
         landuse_s15 = landuse_s15.drop(columns=['mgra_15', ]).fillna(0)
         cols_order = [col for col in landuse_abm3.columns if col in landuse_s15.columns]
         landuse_s15 = landuse_s15[cols_order]
-
+        
+        parking_s15 = self._parking_conversion(mgra_s14_shp, mgra_s15_shp, parking_s14, landuse_s14)
+        landuse_s15 = landuse_s15.merge(parking_s15, on='mgra', how='left').fillna(0)
+        landuse_s15.loc[landuse_s15['mgra'] == 6895, 'parking_type'] = 3
         return landuse_s15
+    
+    def _min_parkarea(self, group, park_area_s14):
+            group['area_pct'] = group['area']/group['area'].sum()
+            mgra14_list = group.loc[group['area_pct'] > 0.1, 'mgra_14']
+            if mgra14_list.empty:
+                return None 
+            return park_area_s14[mgra14_list].min()
+    
+    def _parking_conversion(self, mgra_s14_shp, mgra_s15_shp, parking_s14, landuse_s14):
+        mgra_s15_shp = mgra_s15_shp.to_crs(epsg=2230) if not mgra_s15_shp.crs.is_projected else mgra_s15_shp
+        mgra_s14_shp = mgra_s14_shp.to_crs(epsg=2230) if not mgra_s14_shp.crs.is_projected else mgra_s14_shp
+        mgra_s14_shp = mgra_s15_shp.to_crs(mgra_s15_shp.crs) if mgra_s15_shp.crs != mgra_s14_shp.crs else mgra_s14_shp
+        
+        mgra_s15_shp = mgra_s15_shp.rename(columns={'MGRA':'mgra_15'})
+        mgra_s14_shp = mgra_s14_shp.rename(columns={'MGRA':'mgra_14'})
+        
+        landuse_s14['parking_spaces'] = landuse_s14[['hstallsoth', 'hstallssam', 'dstallsoth', 'dstallssam', 'mstallsoth', 'mstallssam']].max(axis=1)
+        parking_stalls_s15 = landuse_s14.groupby('mgra_15')['parking_spaces'].sum()
+        
+        mgra15_over_mgra14 = gpd.overlay(mgra_s15_shp, mgra_s14_shp, how='intersection')
+        mgra15_over_mgra14['area'] = mgra15_over_mgra14['geometry'].area
+
+        largest_area = mgra15_over_mgra14.loc[mgra15_over_mgra14.groupby('mgra_15')['area'].idxmax(), ['mgra_15', 'mgra_14']]
+        parking_costs_s15 = largest_area.merge(parking_s14, right_on='mgra', left_on='mgra_14', how='left')
+        parking_costs_s15 = (parking_costs_s15.drop(columns = ['mgra_14', 'mgra', 'mgraParkArea'])
+                                            .rename(columns={'mgra_15':'mgra',
+                                                            'lsWgtAvgCostM':'exp_monthly',
+                                                            'lsWgtAvgCostD':'exp_daily',
+                                                            'lsWgtAvgCostH':'exp_hourly'})                    
+        )
+        
+        park_area_s14 = parking_s14.set_index('mgra')['mgraParkArea']
+        min_park_area = mgra15_over_mgra14.groupby('mgra_15').apply(lambda group: self._min_parkarea (group, park_area_s14))
+        
+        parking_costs_s15['parking_type'] = parking_costs_s15['mgra'].map(min_park_area)
+        parking_costs_s15['parking_type'] = np.where(parking_costs_s15['parking_type'].isin([3,4]), np.nan, parking_costs_s15['parking_type'])
+
+        parking_costs_s15['parking_type'] = np.where(
+            ((parking_costs_s15['exp_monthly'] + parking_costs_s15['exp_hourly'] + parking_costs_s15['exp_hourly']) != 0) & parking_costs_s15['parking_type'].isna(),
+            1,
+            parking_costs_s15['parking_type']
+        )
+        parking_costs_s15['parking_type'] = parking_costs_s15['parking_type'].fillna(3).astype(int)
+        parking_s15 = pd.merge(parking_stalls_s15, parking_costs_s15, right_on='mgra', left_index=True, how='outer').fillna(0)
+        return parking_s15
 
 class Main:
     def __init__(self, config_path):
