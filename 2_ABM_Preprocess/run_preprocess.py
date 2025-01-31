@@ -235,7 +235,7 @@ def process_household()-> pd.DataFrame:
     households['household_serial_no'] = 0
     households['version'] = 0
     
-    #create poverty (ref: ASPE 2022 Poverty guidelines)
+    #create poverty (ref: ASPE 2022 Poverty guidelines https://aspe.hhs.gov/sites/default/files/documents/4b515876c4674466423975826ac57583/Guidelines-2022.pdf)
     households['poverty_guideline'] = 13590
     households.loc[(households['persons'] == 2), 'poverty_guideline'] = 18310
     households.loc[(households['persons'] == 3), 'poverty_guideline'] = 23030
