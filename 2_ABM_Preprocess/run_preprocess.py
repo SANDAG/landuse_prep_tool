@@ -224,6 +224,7 @@ def process_household()-> pd.DataFrame:
         'HHADJINC': 'hinc',
         'VEH': 'veh',
         'NP': 'persons',
+        'workers': 'num_workers',
         'HHT': 'hht',
         'BLD': 'bldgsz'}
     
@@ -259,12 +260,6 @@ def process_household()-> pd.DataFrame:
     choices = [1,2,3,4,5]
     households["hinccat1"] = pd.Series(np.select(conditions, choices, default=1), dtype="int")
     
-    #create number of workers in household
-    # households['num_workers'] = households['WIF']
-    # households.loc[(households['WIF']==3) & (households['persons']>=3) & (households['HUPAC']>=4), 'num_workers'] = households['persons']
-    households['num_workers'] = households['workers']
-    households.loc[(households['workers']==3) & (households['persons']>=3) & (households['HUPAC']>=4), 'num_workers'] = households['persons']
-
     #fill NaN with o
     households['num_workers'].fillna(0, inplace=True)
     households['veh'].fillna(0, inplace=True)
