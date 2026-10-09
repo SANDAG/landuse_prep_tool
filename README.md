@@ -1,8 +1,8 @@
 # SANDAG ABM3 Land Use Preparation Tool
-Tool for processing outputs given to us from Estimates and Forecasts to be used in ABM3. There are three main parts of the tool:
+Tool for preparing land use and parking inputs for ABM3 from Estimates and Forecasts outputs. Household and person processing is handled by the [Population-Sim pipeline](https://github.com/SANDAG/Population-Sim/pull/117). There are three main parts of the tool:
 1. Process outputs of the 2022 parking inventory to impute missing data.
 2. Estimate regression models to predict the number of free and paid spaces in an MGRA.
-3. Create household, person, and land use inputs for running ABM.
+3. Create land use inputs for running ABM.
 
 Unless there are changes to the base year network or inventory, only the third step needs to be run.
 
