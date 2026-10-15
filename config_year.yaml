@@ -32,6 +32,9 @@ walk_coef: -0.3
 max_est_paid_spaces: 3000
 max_est_free_spaces: 1000
 
+#Databricks PopulationSim settings
+popsim_run_id: 6
+
 #SQL Server Connection
 server : 'DGISWSQL22'
 database : 'RP2025'

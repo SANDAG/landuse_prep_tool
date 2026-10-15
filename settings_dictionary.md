@@ -64,6 +64,8 @@
 
 **update_rate:** Rate to update parking rates. Must be 0.5, 1, or 1.5.
 
+**popsim_run_id:** The PopulationSim run to read from Databricks.
+
 **server:** GIS server containing information for different years.
 
 **database:** Database on `server` containing the desired information.

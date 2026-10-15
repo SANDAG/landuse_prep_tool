@@ -35,8 +35,14 @@ A dictionary of the settings in config.yaml can be found [here](settings_diction
 
 1. secrets.yml
 
-Copy `secrets.example.yml` to `secrets.yml` and fill in the SQL warehouse id. The `secrets.yml` should mirror the following structure. This file is included in the `.gitignore` to keep private.
+Copy `secrets.example.yml` to `secrets.yml` and fill in the SQL warehouse id, catalog and schema. This file is included in the `.gitignore` to keep it private. 
 ```yaml
 databricks:
-  warehouse_id: "<warehouse-id>" # SQL Warehouses > your warehouse > Connection details
+  warehouse_id: "<warehouse-id>" # SQL Warehouse connection details
+  catalog: "<catalog>" # Catalog for PopulationSim output tables
+  schema: "<schema>" # Schema for PopulationSim output tables
 ```
+
+2. config_[YEAR].yaml
+
+Set `popsim_run_id` to the PopulationSim run to read. 
