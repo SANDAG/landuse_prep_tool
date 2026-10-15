@@ -1,5 +1,5 @@
 # landuse_prep_tool
-This script prepares land use and synthentic population files for ABM3 Model input, received from E&amp;F for ABM including auxiliary data(School district and AV data), MicroMobility, MicroTransit, Parking
+This script prepares land use inputs for ABM3 from Estimates and Forecasts, with auxiliary school/AV data, micromobility, microtransit, and parking inputs. Household and person processing is handled by the [Population-Sim pipeline](https://github.com/SANDAG/Population-Sim/pull/117).
 
 <hr>
 

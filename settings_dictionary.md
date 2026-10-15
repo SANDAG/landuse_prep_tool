@@ -34,10 +34,6 @@
 
 **ff_year:** The year of the flexible fleet network to use. If not provided it will use the same value as `scenario_year`. This only is needed if preparing inputs for a no-build scenario, in which case it should be set to the base year (2022).
 
-**household_file:** The name of the household file provieded by E&F. It should be within `EF_dir`.
-
-**persons_file:** The name of the person file provieded by E&F. It should be within `EF_dir`.
-
 **landuse_file:** The name of the land use file provieded by E&F. It should be within `EF_dir`.
 
 **auxiliary_file:** File to be merged with the MGRA file. Contains the elementary and high school districts, availability of remote AV parking, as well as the number of refueling stations for each MGRA. This file needs to be present in `input_dir`.

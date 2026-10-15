@@ -10,8 +10,6 @@ EF_dir: T:\socioec\Current_Projects\SR15\S0\version19\abm_csv
 output_dir: T:\projects\sr15\land_use\2025RP_draft\2022\20240827
 scenario_year: 2022
 ff_year: 2022  #Flexible fleet year
-households_file: synthetic_households_${scenario_year}.csv
-persons_file: synthetic_persons_${scenario_year}.csv
 landuse_file: mgra15_based_input_${scenario_year}.csv
 auxiliary_file: auxiliary_columns.csv #School and AV data
 micro_mob_file: micro_mobility_allyears.csv
