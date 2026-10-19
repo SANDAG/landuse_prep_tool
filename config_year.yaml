@@ -11,6 +11,7 @@ output_dir: T:\projects\sr15\land_use\2025RP_draft\2022\20240827
 scenario_year: 2022
 ff_year: 2022  #Flexible fleet year
 landuse_file: mgra15_based_input_${scenario_year}.csv
+landuse_from_databricks: True #True reads land use from Databricks (popsim_run_id), False reads landuse_file
 auxiliary_file: auxiliary_columns.csv #School and AV data
 micro_mob_file: micro_mobility_allyears.csv
 
@@ -33,7 +34,7 @@ max_est_paid_spaces: 3000
 max_est_free_spaces: 1000
 
 #Databricks PopulationSim settings
-popsim_run_id: 6
+popsim_run_id: 1
 
 #SQL Server Connection
 server : 'DGISWSQL22'
