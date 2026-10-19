@@ -33,7 +33,19 @@ A dictionary of the settings in config.yaml can be found [here](settings_diction
 
 ## To read PopulationSim outputs from Databricks
 
-1. secrets.yml
+1. Databricks login
+
+Log in once with the Databricks CLI. This saves a `DEFAULT` profile in `~/.databrickscfg`, which the scripts use.
+```
+databricks auth login --host <workspace-url>
+```
+To use a different profile, set the environment variable `DATABRICKS_CONFIG_PROFILE` to its name. For example, to set it whenever the `landuse` environment is activated:
+```
+conda env config vars set DATABRICKS_CONFIG_PROFILE=<profile-name> -n landuse
+```
+Then deactivate and reactivate the environment.
+
+2. secrets.yml
 
 Copy `secrets.example.yml` to `secrets.yml` and fill in the SQL warehouse id, catalog and schema. This file is included in the `.gitignore` to keep it private. 
 ```yaml
@@ -43,6 +55,6 @@ databricks:
   schema: "<schema>" # Schema for PopulationSim output tables
 ```
 
-2. config_[YEAR].yaml
+3. config_[YEAR].yaml
 
 Set `popsim_run_id` to the PopulationSim run to read. 
