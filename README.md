@@ -33,19 +33,30 @@ A dictionary of the settings in config.yaml can be found [here](settings_diction
 
 ## To read PopulationSim outputs from Databricks
 
-1. Databricks login
+1. Databricks CLI
 
-Log in once with the Databricks CLI. This saves a `DEFAULT` profile in `~/.databrickscfg`, which the scripts use.
+The Databricks CLI only needs to be installed once per modeling server, not by every user. To install it, use your admin (privileged) account. Open Git Bash with "Run as administrator" and run:
+```
+curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+```
+Check that it installed:
+```
+databricks -v
+```
+
+2. Databricks login
+
+Every user needs to do this step once on each server. This saves a `DEFAULT` profile in `~/.databrickscfg` on the server, which the scripts use.
 ```
 databricks auth login --host <workspace-url>
 ```
-To use a different profile, set the environment variable `DATABRICKS_CONFIG_PROFILE` to its name. For example, to set it whenever the `landuse` environment is activated:
+If you gave your profile a name during login instead of leaving it as `DEFAULT`, or want to use a different profile in `~/.databrickscfg`, set the environment variable `DATABRICKS_CONFIG_PROFILE` to that profile's name (the name in square brackets in `~/.databrickscfg`). For example, to set it whenever the `landuse` environment is activated:
 ```
 conda env config vars set DATABRICKS_CONFIG_PROFILE=<profile-name> -n landuse
 ```
 Then deactivate and reactivate the environment.
 
-2. secrets.yml
+3. secrets.yml
 
 Copy `secrets.example.yml` to `secrets.yml` and fill in the SQL warehouse id, catalog and schema. This file is included in the `.gitignore` to keep it private. 
 ```yaml
@@ -55,6 +66,6 @@ databricks:
   schema: "<schema>" # Schema for PopulationSim output tables
 ```
 
-3. config_[YEAR].yaml
+4. config_[YEAR].yaml
 
 Set `popsim_run_id` to the PopulationSim run to read. 
