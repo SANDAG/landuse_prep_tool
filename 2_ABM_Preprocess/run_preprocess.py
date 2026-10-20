@@ -53,7 +53,7 @@ imputed_parking_df = pd.read_csv(os.path.join(parking_output,cfg["imputed_parkin
 if cfg.get('landuse_from_databricks', False):
     from read_databricks import read_run
     print(f"Reading land use for PopulationSim run {cfg['popsim_run_id']} from Databricks")
-    landuse_df = read_run(cfg['popsim_run_id'], table="silver_mgra_based_input")
+    landuse_df = read_run(cfg['popsim_run_id'], table=cfg['popsim_landuse_table'])
     run_years = landuse_df['year'].unique()
     if list(run_years) != [scenario_year]:
         raise ValueError(f"PopulationSim run {cfg['popsim_run_id']} is for year(s) {list(run_years)}, "

@@ -1,7 +1,7 @@
 """
 Reads one PopSim run's rows from a Databricks table (by default
-silver_mgra_based_input) into a pandas DataFrame, optionally saving them to
-CSV or Parquet.
+popsim_landuse_table in the config) into a pandas DataFrame, optionally saving
+them to CSV or Parquet.
 
 
 Authentication uses the DEFAULT profile in ~/.databrickscfg (created by
@@ -62,7 +62,7 @@ def quote_identifier(name):
     return "`" + name.replace("`", "``") + "`"
 
 
-def read_run(run_id, table="silver_mgra_based_input"):
+def read_run(run_id, table):
     """Return every row of catalog.schema.table where run_id = run_id.
 
     The catalog, schema and warehouse_id come from the databricks section of secrets.yml.
@@ -100,17 +100,22 @@ if __name__ == "__main__":
         description="Read one PopSim run's rows from a Databricks table."
     )
     parser.add_argument("--config", default=CONFIG_PATH, help="Config file with popsim_run_id (default: config_year.yaml)")
-    parser.add_argument("--table", default="silver_mgra_based_input")
+    parser.add_argument("--table", help="Table to read (default: popsim_landuse_table in config)")
     parser.add_argument("--output", help="Save to this .csv or .parquet file")
     args = parser.parse_args()
 
     try:
         with open(args.config, "r") as f:
-            run_id = (yaml.safe_load(f) or {}).get("popsim_run_id")
+            config = yaml.safe_load(f) or {}
     except FileNotFoundError:
         parser.error(f"Config file not found: {args.config} (pass --config if it was renamed)")
+    run_id = config.get("popsim_run_id")
     if run_id is None:
         parser.error(f"Set popsim_run_id in {args.config}")
+    if args.table is None:
+        args.table = config.get("popsim_landuse_table")
+        if not args.table:
+            parser.error(f"Set popsim_landuse_table in {args.config} or pass --table")
     try:
         secrets = load_secrets()
     except ValueError as e:

@@ -68,6 +68,8 @@
 
 **popsim_run_id:** The PopulationSim run to read from Databricks.
 
+**popsim_landuse_table:** The Databricks table with the MGRA land use for each PopulationSim run (`silver_mgra_based_input`). It is read from the catalog and schema set in `secrets.yml`.
+
 **server:** GIS server containing information for different years.
 
 **database:** Database on `server` containing the desired information.

@@ -35,6 +35,7 @@ max_est_free_spaces: 1000
 
 #Databricks PopulationSim settings
 popsim_run_id: 1
+popsim_landuse_table: silver_mgra_based_input #Databricks table with the MGRA land use for each run
 
 #SQL Server Connection
 server : 'DGISWSQL22'

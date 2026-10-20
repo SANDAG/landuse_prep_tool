@@ -68,4 +68,4 @@ databricks:
 
 4. config_[YEAR].yaml
 
-Set `popsim_run_id` to the PopulationSim run to read. 
+Set `popsim_run_id` to the PopulationSim run to read. `popsim_landuse_table` is the Databricks table the land use is read from (`silver_mgra_based_input`). 
