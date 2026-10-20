@@ -27,10 +27,12 @@ from databricks.sdk.core import Config
 #         warehouse_id: "<warehouse-id>"
 #         catalog: "<catalog>"
 #         schema: "<schema>"
-#   Set popsim_run_id in config_year.yaml.
+#   Set popsim_run_id in config_year.yaml (or pass --config if the config was renamed).
 #
 #   Usage:    python 2_ABM_Preprocess/read_databricks.py [options]
 #   Example:  python 2_ABM_Preprocess/read_databricks.py --output output/mgra_based_input.csv
+#   Example (renamed config):
+#             python 2_ABM_Preprocess/read_databricks.py --config config_2022.yaml
 #   Example (another table):
 #             python 2_ABM_Preprocess/read_databricks.py --table silver_synthetic_persons --output persons.parquet
 # -----------------------------------------------------------------------
@@ -97,14 +99,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Read one PopSim run's rows from a Databricks table."
     )
+    parser.add_argument("--config", default=CONFIG_PATH, help="Config file with popsim_run_id (default: config_year.yaml)")
     parser.add_argument("--table", default="silver_mgra_based_input")
     parser.add_argument("--output", help="Save to this .csv or .parquet file")
     args = parser.parse_args()
 
-    with open(CONFIG_PATH, "r") as f:
-        run_id = (yaml.safe_load(f) or {}).get("popsim_run_id")
+    try:
+        with open(args.config, "r") as f:
+            run_id = (yaml.safe_load(f) or {}).get("popsim_run_id")
+    except FileNotFoundError:
+        parser.error(f"Config file not found: {args.config} (pass --config if it was renamed)")
     if run_id is None:
-        parser.error(f"Set popsim_run_id in {CONFIG_PATH}")
+        parser.error(f"Set popsim_run_id in {args.config}")
     try:
         secrets = load_secrets()
     except ValueError as e:
