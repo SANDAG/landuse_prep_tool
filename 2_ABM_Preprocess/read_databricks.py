@@ -10,7 +10,6 @@ Authentication uses the DEFAULT profile in ~/.databrickscfg (created by
 
 import argparse
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -36,7 +35,6 @@ from databricks.sdk.core import Config
 #             python 2_ABM_Preprocess/read_databricks.py --table silver_synthetic_persons --output persons.parquet
 # -----------------------------------------------------------------------
 
-_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 SECRETS_PATH = Path(__file__).parent.parent / "secrets.yml"
 CONFIG_PATH = Path(__file__).parent.parent / "config_year.yaml"
 
@@ -54,6 +52,14 @@ def load_secrets():
     return databricks
 
 
+def quote_identifier(name):
+    """Return name as a backtick-quoted SQL identifier, escaping any backticks in it."""
+    name = str(name)
+    if not name:
+        raise ValueError("Catalog/schema/table name is empty")
+    return "`" + name.replace("`", "``") + "`"
+
+
 def read_run(run_id, table="silver_mgra_based_input"):
     """Return every row of catalog.schema.table where run_id = run_id.
 
@@ -62,13 +68,11 @@ def read_run(run_id, table="silver_mgra_based_input"):
     secrets = load_secrets()
     catalog, schema = secrets["catalog"], secrets["schema"]
 
-    # Table names can't be query parameters, so they're validated instead
-    for name in (catalog, schema, table):
-        if not _IDENTIFIER.match(name):
-            raise ValueError(f"Invalid catalog/schema/table name: {name!r}")
+    # Table names can't be query parameters, so they're quoted and escaped instead
+    full_name = ".".join(quote_identifier(name) for name in (catalog, schema, table))
 
     cfg = Config()
-    query = f"SELECT * FROM `{catalog}`.`{schema}`.`{table}` WHERE run_id = :run_id"
+    query = f"SELECT * FROM {full_name} WHERE run_id = :run_id"
 
     with sql.connect(
         server_hostname=cfg.host.removeprefix("https://"),
