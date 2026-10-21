@@ -50,7 +50,21 @@ auxiliary_file = os.path.join(input_dir,cfg['auxiliary_file']) #2019 school, rem
 
 
 imputed_parking_df = pd.read_csv(os.path.join(parking_output,cfg["imputed_parking_df"])).set_index('mgra')
-lu_df = pd.read_csv(landuse_file).set_index("mgra")
+if cfg.get('landuse_from_databricks', False):
+    from read_databricks import read_run
+    print(f"Reading land use for PopulationSim run {cfg['popsim_run_id']} from Databricks")
+    landuse_df = read_run(cfg['popsim_run_id'], table=cfg['popsim_landuse_table'])
+    run_years = landuse_df['year'].unique()
+    if list(run_years) != [scenario_year]:
+        raise ValueError(f"PopulationSim run {cfg['popsim_run_id']} is for year(s) {list(run_years)}, "
+                         f"but scenario_year is {scenario_year}")
+    # Match the E&F CSV: drop the run metadata columns and use int64 like read_csv
+    landuse_df = landuse_df.drop(columns=['run_id', 'run_timestamp', 'year'])
+    int_cols = landuse_df.select_dtypes('integer').columns
+    landuse_df[int_cols] = landuse_df[int_cols].astype('int64')
+else:
+    landuse_df = pd.read_csv(landuse_file)
+lu_df = landuse_df.set_index("mgra")
 print("Reading MGRA shapefile data")
 mgra_gdf = gpd.read_file(cfg["geometry_file"]).set_index("MGRA")[ #mgra index removed
     ["TAZ", "geometry"]
@@ -216,7 +230,7 @@ def process_landuse()-> pd.DataFrame:
         If these column names are changed, then the corresponding names need to be changed in the configs.
     '''
     print('Working on Landuse file')
-    df_mgra = pd.read_csv(landuse_file)
+    df_mgra = landuse_df.copy()
     mmfile = pd.read_csv(micro_mobility_file)
     df_auxiliary = pd.read_csv(auxiliary_file)
 

@@ -36,6 +36,8 @@
 
 **landuse_file:** The name of the land use file provieded by E&F. It should be within `EF_dir`.
 
+**landuse_from_databricks:** Boolean indicating whether to read the land use from the Databricks table. If False, the land use is read from `landuse_file`.
+
 **auxiliary_file:** File to be merged with the MGRA file. Contains the elementary and high school districts, availability of remote AV parking, as well as the number of refueling stations for each MGRA. This file needs to be present in `input_dir`.
 
 **micro_mob_file:** Contains the micromobility access times for each mobility hub type. This is joined to the MGRA file based on the mobility hub type of the MGRA if the MGRA is within a mobility hub. This file needs to be present in `input_dir`.
@@ -63,6 +65,10 @@
 **parking_policy:** File containing the prices that define the policy.
 
 **update_rate:** Rate to update parking rates. Must be 0.5, 1, or 1.5.
+
+**popsim_run_id:** The PopulationSim run to read from Databricks.
+
+**popsim_landuse_table:** The Databricks table with the MGRA land use for each PopulationSim run (`silver_mgra_based_input`). It is read from the catalog and schema set in `secrets.yml`.
 
 **server:** GIS server containing information for different years.
 

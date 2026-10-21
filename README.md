@@ -30,3 +30,24 @@ A dictionary of the settings in config.yaml can be found [here](settings_diction
 7. Edit the setting `bike_net` and 'bike_node' to be the directory with the latest active transportation network.
 8. Open Anaconda prompt, navigate into the cloned repo and create an Anaconda environment using the environment.yml file.
 9. Activate the environment and run run_parking_preprocessing.bat. The files will be created in the specified `parking_output_dir` 
+
+## To read PopulationSim outputs from Databricks
+
+1. secrets.yml
+
+Copy `secrets.example.yml` to `secrets.yml` and fill in the workspace URL, SQL warehouse id, catalog and schema. This file is included in the `.gitignore` to keep it private. 
+```yaml
+databricks:
+  host: "<workspace-url>" # Databricks workspace URL
+  warehouse_id: "<warehouse-id>" # SQL Warehouse connection details
+  catalog: "<catalog>" # Catalog for PopulationSim output tables
+  schema: "<schema>" # Schema for PopulationSim output tables
+```
+
+2. config_[YEAR].yaml
+
+Set `popsim_run_id` to the PopulationSim run to read. `popsim_landuse_table` is the Databricks table the land use is read from (`silver_mgra_based_input`). 
+
+3. Sign in
+
+When the land use is read from Databricks, a browser window opens to sign in with your Databricks account.

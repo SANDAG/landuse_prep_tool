@@ -1,1 +1,12 @@
 1_1_Parking/3_costs_estimation/__pycache__/*
+# Secrets file
+secrets.yml
+
+.databricks
+
+databricks.yml
+
+settings.json
+
+*.pyc
+__pycache__/
