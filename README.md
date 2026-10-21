@@ -33,39 +33,21 @@ A dictionary of the settings in config.yaml can be found [here](settings_diction
 
 ## To read PopulationSim outputs from Databricks
 
-1. Databricks CLI
+1. secrets.yml
 
-The Databricks CLI only needs to be installed once per modeling server, not by every user. To install it, use your admin (privileged) account. Open Git Bash with "Run as administrator" and run:
-```
-curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
-```
-Check that it installed:
-```
-databricks -v
-```
-
-2. Databricks login
-
-Every user needs to do this step once on each server. This saves a `DEFAULT` profile in `~/.databrickscfg` on the server, which the scripts use.
-```
-databricks auth login --host <workspace-url>
-```
-If you gave your profile a name during login instead of leaving it as `DEFAULT`, or want to use a different profile in `~/.databrickscfg`, set the environment variable `DATABRICKS_CONFIG_PROFILE` to that profile's name (the name in square brackets in `~/.databrickscfg`). For example, to set it whenever the `landuse` environment is activated:
-```
-conda env config vars set DATABRICKS_CONFIG_PROFILE=<profile-name> -n landuse
-```
-Then deactivate and reactivate the environment.
-
-3. secrets.yml
-
-Copy `secrets.example.yml` to `secrets.yml` and fill in the SQL warehouse id, catalog and schema. This file is included in the `.gitignore` to keep it private. 
+Copy `secrets.example.yml` to `secrets.yml` and fill in the workspace URL, SQL warehouse id, catalog and schema. This file is included in the `.gitignore` to keep it private. 
 ```yaml
 databricks:
+  host: "<workspace-url>" # Databricks workspace URL
   warehouse_id: "<warehouse-id>" # SQL Warehouse connection details
   catalog: "<catalog>" # Catalog for PopulationSim output tables
   schema: "<schema>" # Schema for PopulationSim output tables
 ```
 
-4. config_[YEAR].yaml
+2. config_[YEAR].yaml
 
 Set `popsim_run_id` to the PopulationSim run to read. `popsim_landuse_table` is the Databricks table the land use is read from (`silver_mgra_based_input`). 
+
+3. Sign in
+
+When the land use is read from Databricks, a browser window opens to sign in with your Databricks account.

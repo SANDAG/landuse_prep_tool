@@ -4,8 +4,8 @@ popsim_landuse_table in the config) into a pandas DataFrame, optionally saving
 them to CSV or Parquet.
 
 
-Authentication uses the DEFAULT profile in ~/.databrickscfg (created by
-`databricks auth login`). Set DATABRICKS_CONFIG_PROFILE to use another profile.
+Authentication uses OAuth user-to-machine (U2M): the connector opens a browser
+to sign in with your Databricks account.
 """
 
 import argparse
@@ -15,7 +15,6 @@ from pathlib import Path
 
 import yaml
 from databricks import sql
-from databricks.sdk.core import Config
 
 # -----------------------------------------------------------------------
 # HOW TO RUN FOR TESTING DATABRICKS CONNECTION
@@ -24,6 +23,7 @@ from databricks.sdk.core import Config
 #       conda env update --name landuse --file environment.yml
 #   Update secrets.yml with Databricks connection information.
 #   secrets.yml is located at the repository root (git-ignored).
+#         host: "<workspace-url>"
 #         warehouse_id: "<warehouse-id>"
 #         catalog: "<catalog>"
 #         schema: "<schema>"
@@ -42,13 +42,13 @@ CONFIG_PATH = Path(__file__).parent.parent / "config_year.yaml"
 
 
 def load_secrets():
-    """Return the databricks section of secrets.yml (warehouse_id, catalog, schema)."""
+    """Return the databricks section of secrets.yml (host, warehouse_id, catalog, schema)."""
     secrets = {}
     if SECRETS_PATH.exists():
         with open(SECRETS_PATH, "r") as file:
             secrets = yaml.safe_load(file) or {}
     databricks = secrets.get("databricks") or {}
-    for key in ("warehouse_id", "catalog", "schema"):
+    for key in ("host", "warehouse_id", "catalog", "schema"):
         if not databricks.get(key):
             raise ValueError(f"Set databricks.{key} in {SECRETS_PATH}")
     return databricks
@@ -65,7 +65,7 @@ def quote_identifier(name):
 def read_run(run_id, table):
     """Return every row of catalog.schema.table where run_id = run_id.
 
-    The catalog, schema and warehouse_id come from the databricks section of secrets.yml.
+    The host, catalog, schema and warehouse_id come from the databricks section of secrets.yml.
     """
     secrets = load_secrets()
     catalog, schema = secrets["catalog"], secrets["schema"]
@@ -73,13 +73,12 @@ def read_run(run_id, table):
     # Table names can't be query parameters, so they're quoted and escaped instead
     full_name = ".".join(quote_identifier(name) for name in (catalog, schema, table))
 
-    cfg = Config()
     query = f"SELECT * FROM {full_name} WHERE run_id = :run_id"
 
     with sql.connect(
-        server_hostname=cfg.host.removeprefix("https://"),
+        server_hostname=secrets["host"].removeprefix("https://").rstrip("/"),
         http_path=f"/sql/1.0/warehouses/{secrets['warehouse_id']}",
-        credentials_provider=lambda: cfg.authenticate,
+        auth_type="databricks-oauth",
     ) as connection:
         with connection.cursor() as cursor:
             cursor.execute(query, {"run_id": int(run_id)})
