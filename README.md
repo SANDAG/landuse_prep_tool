@@ -18,7 +18,7 @@ A dictionary of the settings in config.yaml can be found [here](settings_diction
 7. Edit the setting `EF_dir` and `base_lu` to be the directory with the outputs from Estimates and Forecasts that the land use prep tool will process.
 8. Edit the `output_dir` to the desired output location.
 9. Update the name of config file with scenario year.
-10. Open Anaconda prompt, navigate into the cloned repo and activate the environment and run run_lanuse_preprocessing.bat. The files will be created in the specified `output_dir`
+10. Open Anaconda prompt, navigate into the cloned repo and activate the environment and run run_landuse_preprocessing.bat. The files will be created in the specified `output_dir`
 
 ## To easily run parking preprocessing
 1. Create a directory to run in and clone the repo into the directory. Create folders in the clone called "parking_processed" and "parking_inputs"
