@@ -8,17 +8,55 @@ Unless there are changes to the base year network or inventory, only the third s
 
 A dictionary of the settings in config.yaml can be found [here](settings_dictionary.md).
 
+## Python environment with uv
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) on Windows from PowerShell:
+
+```powershell
+winget install --id astral-sh.uv -e
+```
+
+Open a new terminal, navigate to the cloned repository, and create the environment:
+
+```powershell
+uv sync
+```
+
+uv downloads Python 3.11 if needed and installs the project dependencies into `.venv`.
+No Anaconda installation or environment activation is required. In VS Code, use
+**Python: Select Interpreter** to select `.venv\Scripts\python.exe`.
+Dependencies are defined in `pyproject.toml`; `uv.lock` records the resolved versions.
+`environment.yml` is retained only for legacy Conda users.
+The geospatial dependencies use Shapely 1.x-compatible versions because
+`geonetworkx` relies on APIs removed in Shapely 2. NumPy is kept below 2 for
+compatibility with that stack.
+
+Run either workflow from the repository root (replace the config name as needed):
+
+```powershell
+uv run python run_landuse_preprocessing.py config_year.yaml
+uv run python run_parking_preprocessing.py config_procpkg.yaml
+```
+
+The batch files also use uv and accept an optional config filename, for example
+`.\run_landuse_preprocessing.bat config_2035.yaml`. Their defaults are
+`config_year.yaml` and `config_procpkg.yaml`, respectively.
+
+Database access still requires the appropriate SQL Server ODBC driver installed on
+Windows, database permissions, and access to any configured network drives. uv
+installs `pyodbc`, not the system ODBC driver.
+
 ## To easily run without parking preprocessing
 1. Gain access to the database RP2025 on the server DGISWSQL22 from GIS.
 2. Create a directory to run in.
 3. Clone the repo into the directory.
-4. Create anaconda environment using the environment.yml file.
+4. Create the Python environment with `uv sync` (see above).
 5. Open up config_[YEAR].yaml and set `run_ABM_preprocess` to be `True`.
 6. If no parking policy is being applied, set `implement_policy` to be `False`.
 7. Edit the setting `EF_dir` and `base_lu` to be the directory with the outputs from Estimates and Forecasts that the land use prep tool will process.
 8. Edit the `output_dir` to the desired output location.
 9. Update the name of config file with scenario year.
-10. Open Anaconda prompt, navigate into the cloned repo and activate the environment and run run_landuse_preprocessing.bat. The files will be created in the specified `output_dir`
+10. Open PowerShell, navigate into the cloned repo and run `.\run_landuse_preprocessing.bat config_[YEAR].yaml` using your renamed config file. The files will be created in the specified `output_dir`.
 
 ## To easily run parking preprocessing
 1. Create a directory to run in and clone the repo into the directory. Create folders in the clone called "parking_processed" and "parking_inputs"
@@ -28,8 +66,8 @@ A dictionary of the settings in config.yaml can be found [here](settings_diction
 5. Open up config_procpkg.yaml and set `run_parking_inventory_preprocess` and 'run_parking_space_estimation' to be `True` .
 6. Edit the setting `base_lu` to be the directory with the outputs from Estimates and Forecasts that the land use prep tool will process.
 7. Edit the setting `bike_net` and 'bike_node' to be the directory with the latest active transportation network.
-8. Open Anaconda prompt, navigate into the cloned repo and create an Anaconda environment using the environment.yml file.
-9. Activate the environment and run run_parking_preprocessing.bat. The files will be created in the specified `parking_output_dir` 
+8. Open PowerShell, navigate into the cloned repo and create the Python environment with `uv sync`.
+9. Run `.\run_parking_preprocessing.bat`. The files will be created in the specified `parking_output_dir`.
 
 ## To read PopulationSim outputs from Databricks
 

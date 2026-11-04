@@ -1,0 +1,29 @@
+[project]
+name = "landuse-prep-tool"
+version = "0.1.0"
+description = "SANDAG ABM3 land use and parking input preparation"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fiona",
+    "geopandas>=0.12,<1",
+    "matplotlib",
+    "networkx",
+    "numpy<2",
+    "scipy",
+    "seaborn",
+    "scikit-learn",
+    "sqlalchemy",
+    "statsmodels",
+    "tqdm",
+    "pyyaml",
+    "pyodbc",
+    "geonetworkx",
+    "osmnx>=1.2,<1.3",
+    "shapely>=1.8,<2",
+    "alphashape",
+    "databricks-sql-connector[pyarrow]",
+    "databricks-sdk",
+]
+
+[tool.uv]
+package = false

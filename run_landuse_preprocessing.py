@@ -1,4 +1,4 @@
-import os
+import subprocess
 import sys
 import yaml
 
@@ -9,15 +9,9 @@ if __name__ == "__main__":
         settings = yaml.safe_load(f)
         f.close()
 
-    env_name = os.environ["CONDA_DEFAULT_ENV"]
-
     if settings["run_ABM_preprocess"]:
-        errorcode = os.system(
-            r"conda activate {0} && python T:\ABM\release_test\tools\landuse_prep_tool\version_2_0\2_ABM_Preprocess\run_preprocess.py {1}".format(
-                env_name,
-                config_file
-            )
-        )
+        script = r"T:\ABM\release_test\tools\landuse_prep_tool\version_2_0\2_ABM_Preprocess\run_preprocess.py"
+        errorcode = subprocess.call([sys.executable, str(script), config_file])
         if errorcode == 0:
             print("basic files are written")
         else:
