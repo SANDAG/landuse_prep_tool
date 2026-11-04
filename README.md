@@ -23,10 +23,9 @@ uv sync
 ```
 
 uv downloads Python 3.11 if needed and installs the project dependencies into `.venv`.
-No Anaconda installation or environment activation is required. In VS Code, use
+No environment activation is required. In VS Code, use
 **Python: Select Interpreter** to select `.venv\Scripts\python.exe`.
 Dependencies are defined in `pyproject.toml`; `uv.lock` records the resolved versions.
-`environment.yml` is retained only for legacy Conda users.
 The geospatial dependencies use Shapely 1.x-compatible versions because
 `geonetworkx` relies on APIs removed in Shapely 2. NumPy is kept below 2 for
 compatibility with that stack.
@@ -38,9 +37,10 @@ uv run python run_landuse_preprocessing.py config_year.yaml
 uv run python run_parking_preprocessing.py config_procpkg.yaml
 ```
 
-The batch files also use uv and accept an optional config filename, for example
-`.\run_landuse_preprocessing.bat config_2035.yaml`. Their defaults are
-`config_year.yaml` and `config_procpkg.yaml`, respectively.
+The batch files also use uv and retain their fixed shared-drive script paths.
+Before running the land use batch file, replace `config_{year}.yaml` in its
+command with your config filename. The parking batch file uses `config_procpkg.yaml`.
+To choose a config without editing a batch file, use the Python commands above.
 
 Database access still requires the appropriate SQL Server ODBC driver installed on
 Windows, database permissions, and access to any configured network drives. uv
@@ -56,7 +56,7 @@ installs `pyodbc`, not the system ODBC driver.
 7. Edit the setting `EF_dir` and `base_lu` to be the directory with the outputs from Estimates and Forecasts that the land use prep tool will process.
 8. Edit the `output_dir` to the desired output location.
 9. Update the name of config file with scenario year.
-10. Open PowerShell, navigate into the cloned repo and run `.\run_landuse_preprocessing.bat config_[YEAR].yaml` using your renamed config file. The files will be created in the specified `output_dir`.
+10. Open PowerShell, navigate into the cloned repo and run `uv run python run_landuse_preprocessing.py config_[YEAR].yaml` using your renamed config file. The files will be created in the specified `output_dir`.
 
 ## To easily run parking preprocessing
 1. Create a directory to run in and clone the repo into the directory. Create folders in the clone called "parking_processed" and "parking_inputs"
