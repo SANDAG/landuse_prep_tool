@@ -22,7 +22,9 @@ Open a new terminal, navigate to the cloned repository, and create the environme
 uv sync
 ```
 
-uv downloads Python 3.11 if needed and installs the project dependencies into `.venv`.
+uv downloads Python 3.10 if needed and installs the project dependencies into `.venv`.
+Python 3.11 and 3.12 are also allowed; use `uv sync --python 3.11` or
+`uv sync --python 3.12` to select one explicitly.
 No environment activation is required. In VS Code, use
 **Python: Select Interpreter** to select `.venv\Scripts\python.exe`.
 Dependencies are defined in `pyproject.toml`; `uv.lock` records the resolved versions.

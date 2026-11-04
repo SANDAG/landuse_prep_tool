@@ -2,7 +2,7 @@
 name = "landuse-prep-tool"
 version = "0.1.0"
 description = "SANDAG ABM3 land use and parking input preparation"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "fiona",
     "geopandas>=0.12,<1",
