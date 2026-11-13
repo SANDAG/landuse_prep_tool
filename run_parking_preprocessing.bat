@@ -1,1 +1,1 @@
-python T:\ABM\release_test\tools\landuse_prep_tool\version_2_0\run_parking_preprocessing.py config_procpkg.yaml
+uv run python T:\ABM\release_test\tools\landuse_prep_tool\version_2_0\run_parking_preprocessing.py config_procpkg.yaml

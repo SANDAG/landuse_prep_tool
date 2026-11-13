@@ -19,8 +19,8 @@ from databricks import sql
 # -----------------------------------------------------------------------
 # HOW TO RUN FOR TESTING DATABRICKS CONNECTION
 # -----------------------------------------------------------------------
-#   From the repository root, update the Conda environment:
-#       conda env update --name landuse --file environment.yml
+#   From the repository root, sync the uv environment:
+#       uv sync
 #   Update secrets.yml with Databricks connection information.
 #   secrets.yml is located at the repository root (git-ignored).
 #         host: "<workspace-url>"
@@ -29,12 +29,12 @@ from databricks import sql
 #         schema: "<schema>"
 #   Set popsim_run_id in config_year.yaml (or pass --config if the config was renamed).
 #
-#   Usage:    python 2_ABM_Preprocess/read_databricks.py [options]
-#   Example:  python 2_ABM_Preprocess/read_databricks.py --output output/mgra_based_input.csv
+#   Usage:    uv run python 2_ABM_Preprocess/read_databricks.py [options]
+#   Example:  uv run python 2_ABM_Preprocess/read_databricks.py --output output/mgra_based_input.csv
 #   Example (renamed config):
-#             python 2_ABM_Preprocess/read_databricks.py --config config_2022.yaml
+#             uv run python 2_ABM_Preprocess/read_databricks.py --config config_2022.yaml
 #   Example (another table):
-#             python 2_ABM_Preprocess/read_databricks.py --table silver_synthetic_persons --output persons.parquet
+#             uv run python 2_ABM_Preprocess/read_databricks.py --table silver_synthetic_persons --output persons.parquet
 # -----------------------------------------------------------------------
 
 SECRETS_PATH = Path(__file__).parent.parent / "secrets.yml"
