@@ -42,27 +42,53 @@ xref_df = xref_df.rename(columns={'MGRA':'mgra'})
 # print(xref_df.columns)
 
 # %%
-landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
-
 micro_mobility_file = os.path.join(input_dir,cfg['micro_mob_file'])
 
 auxiliary_file = os.path.join(input_dir,cfg['auxiliary_file']) #2019 school, remoteAVParking	refueling_stations
 
 
 imputed_parking_df = pd.read_csv(os.path.join(parking_output,cfg["imputed_parking_df"])).set_index('mgra')
-if cfg.get('landuse_from_databricks', False):
-    from read_databricks import read_run
-    print(f"Reading land use for PopulationSim run {cfg['popsim_run_id']} from Databricks")
-    landuse_df = read_run(cfg['popsim_run_id'], table=cfg['popsim_landuse_table'])
-    run_years = landuse_df['year'].unique()
-    if list(run_years) != [scenario_year]:
-        raise ValueError(f"PopulationSim run {cfg['popsim_run_id']} is for year(s) {list(run_years)}, "
-                         f"but scenario_year is {scenario_year}")
-    # Match the E&F CSV: drop the run metadata columns and use int64 like read_csv
-    landuse_df = landuse_df.drop(columns=['run_id', 'run_timestamp', 'year'])
-    int_cols = landuse_df.select_dtypes('integer').columns
-    landuse_df[int_cols] = landuse_df[int_cols].astype('int64')
+def clean_popsim_table(df, name):
+    """Check a PopulationSim run table is for scenario_year, then drop the run metadata
+    columns and use int64 like read_csv, to match the CSV files."""
+    if df.empty:
+        raise ValueError(f"No {name} rows for PopulationSim run {cfg['popsim_run_id']}")
+    if 'year' in df.columns:
+        run_years = list(df['year'].unique())
+        if run_years != [scenario_year]:
+            raise ValueError(f"PopulationSim run {cfg['popsim_run_id']} {name} is for year(s) {run_years}, "
+                             f"but scenario_year is {scenario_year}")
+    df = df.drop(columns=['run_id', 'run_timestamp', 'year'], errors='ignore')
+    int_cols = df.select_dtypes('integer').columns
+    df[int_cols] = df[int_cols].astype('int64')
+    return df
+
+landuse_from_databricks = cfg.get('landuse_from_databricks', False)
+hh_persons_from_databricks = cfg.get('hh_persons_from_databricks', False)
+if landuse_from_databricks or hh_persons_from_databricks:
+    from read_databricks import read_runs
+    tables = {}
+    if landuse_from_databricks:
+        tables['land use'] = cfg['popsim_landuse_table']
+    if hh_persons_from_databricks:
+        tables['households'] = cfg['popsim_households_table']
+        tables['persons'] = cfg['popsim_persons_table']
+    print(f"Reading {', '.join(tables)} for PopulationSim run {cfg['popsim_run_id']} from Databricks")
+    popsim_dfs = read_runs(cfg['popsim_run_id'], list(tables.values()))
+    popsim_dfs = {name: clean_popsim_table(popsim_dfs[table], name) for name, table in tables.items()}
+
+if hh_persons_from_databricks:
+    # Households and persons are already transformed by the Population-Sim pipeline, so they're written as is
+    for name in ('households', 'persons'):
+        out_path = os.path.join(write_dir, f'{name}.csv')
+        popsim_dfs[name].to_csv(out_path, index=False)
+        print(f"Wrote {len(popsim_dfs[name]):,} {name} to {out_path}")
+
+if landuse_from_databricks:
+    landuse_df = popsim_dfs['land use']
 else:
+    # landuse_file is only needed when land use isn't read from Databricks
+    landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
     landuse_df = pd.read_csv(landuse_file)
 lu_df = landuse_df.set_index("mgra")
 print("Reading MGRA shapefile data")

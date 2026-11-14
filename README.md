@@ -86,7 +86,9 @@ databricks:
 
 2. config_[YEAR].yaml
 
-Set `popsim_run_id` to the PopulationSim run to read. `popsim_landuse_table` is the Databricks table the land use is read from (`silver_mgra_based_input`). 
+Set `popsim_run_id` to the PopulationSim run to read. `popsim_landuse_table` is the Databricks table the land use is read from (`silver_mgra_based_input`). `landuse_file` is only needed when `landuse_from_databricks` is False.
+
+Set `hh_persons_from_databricks: True` to also read that run's households and persons (`popsim_households_table`, `popsim_persons_table`) and write them to `output_dir` as `households.csv` and `persons.csv`. All tables are read over one connection, so you sign in once.
 
 3. Sign in
 

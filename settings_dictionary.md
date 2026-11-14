@@ -70,6 +70,12 @@
 
 **popsim_landuse_table:** The Databricks table with the MGRA land use for each PopulationSim run (`silver_mgra_based_input`). It is read from the catalog and schema set in `secrets.yml`.
 
+**hh_persons_from_databricks:** Boolean indicating whether to read the households and persons for `popsim_run_id` from Databricks and write them to `output_dir` as `households.csv` and `persons.csv`. They are written as read, since the Population-Sim pipeline already transforms them for ABM3.
+
+**popsim_households_table:** The Databricks table with the synthetic households for each PopulationSim run (`silver_synthetic_households`).
+
+**popsim_persons_table:** The Databricks table with the synthetic persons for each PopulationSim run (`silver_synthetic_persons`).
+
 **server:** GIS server containing information for different years.
 
 **database:** Database on `server` containing the desired information.

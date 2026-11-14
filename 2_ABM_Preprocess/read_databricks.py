@@ -35,6 +35,7 @@ from databricks import sql
 #             uv run python 2_ABM_Preprocess/read_databricks.py --config config_2022.yaml
 #   Example (another table):
 #             uv run python 2_ABM_Preprocess/read_databricks.py --table silver_synthetic_persons --output persons.parquet
+#             uv run python 2_ABM_Preprocess/read_databricks.py --table silver_synthetic_households --output households.csv
 # -----------------------------------------------------------------------
 
 SECRETS_PATH = Path(__file__).parent.parent / "secrets.yml"
@@ -67,22 +68,32 @@ def read_run(run_id, table):
 
     The host, catalog, schema and warehouse_id come from the databricks section of secrets.yml.
     """
+    return read_runs(run_id, [table])[table]
+
+
+def read_runs(run_id, tables):
+    """Return {table: DataFrame} with the run_id rows of each table, over one connection.
+
+    Reading several tables (e.g. land use, households, persons) this way needs only
+    one OAuth sign-in.
+    """
     secrets = load_secrets()
     catalog, schema = secrets["catalog"], secrets["schema"]
 
-    # Table names can't be query parameters, so they're quoted and escaped instead
-    full_name = ".".join(quote_identifier(name) for name in (catalog, schema, table))
-
-    query = f"SELECT * FROM {full_name} WHERE run_id = :run_id"
-
+    results = {}
     with sql.connect(
         server_hostname=secrets["host"].removeprefix("https://").rstrip("/"),
         http_path=f"/sql/1.0/warehouses/{secrets['warehouse_id']}",
         auth_type="databricks-oauth",
     ) as connection:
         with connection.cursor() as cursor:
-            cursor.execute(query, {"run_id": int(run_id)})
-            return cursor.fetchall_arrow().to_pandas()
+            for table in tables:
+                # Table names can't be query parameters, so they're quoted and escaped instead
+                full_name = ".".join(quote_identifier(name) for name in (catalog, schema, table))
+                query = f"SELECT * FROM {full_name} WHERE run_id = :run_id"
+                cursor.execute(query, {"run_id": int(run_id)})
+                results[table] = cursor.fetchall_arrow().to_pandas()
+    return results
 
 
 def save(df, path):
