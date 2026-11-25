@@ -28,7 +28,6 @@ input_dir = cfg['input_dir']
 parking_output = cfg['parking_output_dir']
 scenario_year = cfg['scenario_year']
 write_dir = cfg['output_dir']
-EF_dir = cfg['EF_dir']
 ff_effective_year = cfg.get('ff_year', scenario_year)
 
 #Reading from SQL SERVER
@@ -63,19 +62,16 @@ def clean_popsim_table(df, name):
     df[int_cols] = df[int_cols].astype('int64')
     return df
 
-landuse_from_databricks = cfg.get('landuse_from_databricks', False)
+from read_databricks import read_runs
+
 hh_persons_from_databricks = cfg.get('hh_persons_from_databricks', False)
-if landuse_from_databricks or hh_persons_from_databricks:
-    from read_databricks import read_runs
-    tables = {}
-    if landuse_from_databricks:
-        tables['land use'] = cfg['popsim_landuse_table']
-    if hh_persons_from_databricks:
-        tables['households'] = cfg['popsim_households_table']
-        tables['persons'] = cfg['popsim_persons_table']
-    print(f"Reading {', '.join(tables)} for PopulationSim run {cfg['popsim_run_id']} from Databricks")
-    popsim_dfs = read_runs(cfg['popsim_run_id'], list(tables.values()))
-    popsim_dfs = {name: clean_popsim_table(popsim_dfs[table], name) for name, table in tables.items()}
+tables = {'land use': cfg['popsim_landuse_table']}
+if hh_persons_from_databricks:
+    tables['households'] = cfg['popsim_households_table']
+    tables['persons'] = cfg['popsim_persons_table']
+print(f"Reading {', '.join(tables)} for PopulationSim run {cfg['popsim_run_id']} from Databricks")
+popsim_dfs = read_runs(cfg['popsim_run_id'], list(tables.values()))
+popsim_dfs = {name: clean_popsim_table(popsim_dfs[table], name) for name, table in tables.items()}
 
 if hh_persons_from_databricks:
     # Households and persons are already transformed by the Population-Sim pipeline, so they're written as is
@@ -84,12 +80,7 @@ if hh_persons_from_databricks:
         popsim_dfs[name].to_csv(out_path, index=False)
         print(f"Wrote {len(popsim_dfs[name]):,} {name} to {out_path}")
 
-if landuse_from_databricks:
-    landuse_df = popsim_dfs['land use']
-else:
-    # landuse_file is only needed when land use isn't read from Databricks
-    landuse_file = os.path.join(EF_dir,cfg['landuse_file'].replace('${scenario_year}', str(scenario_year)))
-    landuse_df = pd.read_csv(landuse_file)
+landuse_df = popsim_dfs['land use']
 lu_df = landuse_df.set_index("mgra")
 print("Reading MGRA shapefile data")
 mgra_gdf = gpd.read_file(cfg["geometry_file"]).set_index("MGRA")[ #mgra index removed
