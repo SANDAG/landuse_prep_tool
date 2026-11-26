@@ -26,17 +26,11 @@
 
 **input_dir:** Directory containing the inputs for the ABM preprocessing.
 
-**EF_dir:** Directory containing the files provided by Estimates and Forecasts. 
-
 **output_dir:** The directory to write the outputs of the ABM preprocessing in. **The ABM inputs will be written in this location.**
 
 **scenario_year:** The year of the scenario to prepare the inputs for.
 
 **ff_year:** The year of the flexible fleet network to use. If not provided it will use the same value as `scenario_year`. This only is needed if preparing inputs for a no-build scenario, in which case it should be set to the base year (2022).
-
-**landuse_file:** The name of the land use file provieded by E&F. It should be within `EF_dir`.
-
-**landuse_from_databricks:** Boolean indicating whether to read the land use from the Databricks table. If False, the land use is read from `landuse_file`.
 
 **auxiliary_file:** File to be merged with the MGRA file. Contains the elementary and high school districts, availability of remote AV parking, as well as the number of refueling stations for each MGRA. This file needs to be present in `input_dir`.
 
@@ -69,6 +63,12 @@
 **popsim_run_id:** The PopulationSim run to read from Databricks.
 
 **popsim_landuse_table:** The Databricks table with the MGRA land use for each PopulationSim run (`silver_mgra_based_input`). It is read from the catalog and schema set in `secrets.yml`.
+
+**hh_persons_from_databricks:** Boolean indicating whether to read the households and persons for `popsim_run_id` from Databricks and write them to `output_dir` as `households.csv` and `persons.csv`. They are written as read, since the Population-Sim pipeline already transforms them for ABM3.
+
+**popsim_households_table:** The Databricks table with the synthetic households for each PopulationSim run (`silver_synthetic_households`).
+
+**popsim_persons_table:** The Databricks table with the synthetic persons for each PopulationSim run (`silver_synthetic_persons`).
 
 **server:** GIS server containing information for different years.
 

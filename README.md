@@ -55,7 +55,7 @@ installs `pyodbc`, not the system ODBC driver.
 4. Create the Python environment with `uv sync` (see above).
 5. Open up config_[YEAR].yaml and set `run_ABM_preprocess` to be `True`.
 6. If no parking policy is being applied, set `implement_policy` to be `False`.
-7. Edit the setting `EF_dir` and `base_lu` to be the directory with the outputs from Estimates and Forecasts that the land use prep tool will process.
+7. Set `popsim_run_id` to the PopulationSim run whose land use will be read from Databricks (see "To read PopulationSim outputs from Databricks" below).
 8. Edit the `output_dir` to the desired output location.
 9. Update the name of config file with scenario year.
 10. Open PowerShell, navigate into the cloned repo and run `uv run python run_landuse_preprocessing.py config_[YEAR].yaml` using your renamed config file. The files will be created in the specified `output_dir`.
@@ -86,7 +86,9 @@ databricks:
 
 2. config_[YEAR].yaml
 
-Set `popsim_run_id` to the PopulationSim run to read. `popsim_landuse_table` is the Databricks table the land use is read from (`silver_mgra_based_input`). 
+Set `popsim_run_id` to the PopulationSim run to read. `popsim_landuse_table` is the Databricks table the land use is read from (`silver_mgra_based_input`).
+
+Set `hh_persons_from_databricks: True` to also read that run's households and persons (`popsim_households_table`, `popsim_persons_table`) and write them to `output_dir` as `households.csv` and `persons.csv`. All tables are read over one connection, so you sign in once.
 
 3. Sign in
 
